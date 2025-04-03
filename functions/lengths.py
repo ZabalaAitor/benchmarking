@@ -8,7 +8,7 @@ import seaborn as sns
 from scipy.stats import ks_2samp
 from matplotlib.patches import Rectangle
 
-def plot_length_distributions_kde(circular_bed, filter_directory, tools, output_base_name, circle_type):
+def length_stats(circular_bed, filter_directory, tools, output_base_name, circle_type):
     """
     Generate KDE plots comparing the distributions of filtered detections for multiple tools.
 
@@ -37,73 +37,6 @@ def plot_length_distributions_kde(circular_bed, filter_directory, tools, output_
             tool_df = pd.DataFrame({'Length': filtered_lengths, 'Tool': tool})
             all_data = pd.concat([all_data, tool_df], ignore_index=True)
 
-    # Import the colorblind palette from seaborn
-    color_palette = ['#d46014', '#ddcd3d', '#0972b3', '#4fb4f5', '#b54582']
-
-    # Manually set the first color to black, followed by the colorblind palette
-    custom_palette = ['b3b3b3'] + color_palette
-
-    # 1. Plot for lengths < 10000 (main plot)
-    g = sns.displot(
-        data=all_data[all_data['Length'] < 10000], 
-        x="Length", 
-        hue="Tool", 
-        kind="kde", 
-        aspect=1, 
-        bw_adjust=0.1,
-        palette=custom_palette
-    )
-
-    # Adjust line properties for the simulated circles (make it black and dashed)
-    for line in g.axes[0][0].lines:
-        if line.get_label() == 'Simulated':
-            line.set_color('black')
-            line.set_linestyle('--')
-
-    plt.xlim([200, 10000])  # Set x-axis limits
-    plt.xlabel('Length')
-    plt.ylabel('Density')
-    plt.title(f'{circle_type} - Length Distribution Comparison')  # Title includes circle_type
-
-    # Save the full-length plot with circle_type in the filename
-    output_directory = output_base_name
-    os.makedirs(output_directory, exist_ok=True)
-    output_path = os.path.join(output_directory, f'{circle_type}_length_distributions_comparison.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close()
-
-    print(f"Full length distribution plot saved to {output_path}")
-
-    # 2. Plot for lengths < 1000 (short length plot)
-    g_short = sns.displot(
-        data=all_data[all_data['Length'] < 1000], 
-        x="Length", 
-        hue="Tool", 
-        kind="kde", 
-        aspect=1, 
-        bw_adjust=0.1,
-        palette=custom_palette
-    )
-
-    # Adjust line properties for the simulated circles (make it black and dashed)
-    for line in g_short.axes[0][0].lines:
-        if line.get_label() == 'Simulated':
-            line.set_color('black')
-            line.set_linestyle('--')
-
-    plt.xlabel('Length')
-    plt.ylabel('Density')
-    plt.title(f'{circle_type} - Length Distribution Comparison of Short Circles')  # Title includes circle_type
-    plt.xlim(200, 1000)  # Set x-axis limits for short circles
-
-    # Save the short-length plot with circle_type in the filename
-    output_path_short = os.path.join(output_directory, f'{circle_type}_short_length_distributions_comparison.png')
-    plt.savefig(output_path_short, dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close()
-
-    print(f"Short length distribution plot saved to {output_path_short}")
 
     # 3. Perform Kolmogorov-Smirnov test for full length data (<10000)
     simulated_lengths = all_data[(all_data['Tool'] == 'Simulated') & (all_data['Length'] < 10000)]['Length']

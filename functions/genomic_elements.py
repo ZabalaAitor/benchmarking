@@ -63,7 +63,7 @@ def annotate_genomic_elements(bed_file, output_dir, gene_file, exon_file, other_
             start_pos = int(cols[3])
             end_pos = int(cols[4])
             annotation = cols[2]  # Get the annotation from the second column
-            if chromosome not in other_data:
+            if chro-mosome not in other_data:
                 other_data[chromosome] = []
             other_data[chromosome].append((start_pos, end_pos, annotation))
 
@@ -277,11 +277,6 @@ def calculate_genomic_element_metrics(tp_file, fn_file, fp_file, output_dir, too
     precision_df.to_csv(precision_file, index=False)
     recall_df.to_csv(recall_file, index=False)
     fscore_df.to_csv(fscore_file, index=False)
-
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import os
 
 def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
     """

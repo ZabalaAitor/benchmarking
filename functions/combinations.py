@@ -189,6 +189,160 @@ def rosette(circular_bed, input_dir, output_dir, tool_abbreviations):
                     for circle in intersect_circles:
                         file.write(f"{circle[0]}\t{circle[1]}\t{circle[2]}\n")
 
+# Combinaciones reales (usando guiones bajos en lugar de guiones medios)
+eccDNA_real_combinations = [
+    "CE", "CM", "CF", "EB", "EM", "CE_CM", "CE_CF", "CE_EB", "CE_EM", "CM_CF", 
+    "CM_EB", "CM_EM", "CF_EB", "CF_EM", "EB_EM", "CE_CM_CF", "CE_CM_EB", 
+    "CE_CM_EM", "CE_CF_EB", "CE_CF_EM", "CE_EB_EM", "CM_CF_EB", "CM_CF_EM", 
+    "CM_EB_EM", "CF_EB_EM", "CE_CM_CF_EB", "CE_CM_CF_EM", "CE_CM_EB_EM", 
+    "CE_CF_EB_EM", "CM_CF_EB_EM", "CE_CM_CF_EB_EM"
+]
+
+# Combinaciones adaptadas para Rosette
+eccDNA_ros_combinations_mapping = {
+    "CE_CM_CF": "CE_CM_CE_CF_CM_CF",
+    "CE_CM_EB": "CE_CM_CE_EB_CM_EB",
+    "CE_CM_EM": "CE_CM_CE_EM_CM_EM",
+    "CE_CF_EB": "CE_CF_CE_EB_CF_EB",
+    "CE_CF_EM": "CE_CF_CE_EM_CF_EM",
+    "CE_EB_EM": "CE_EB_CE_EM_EB_EM",
+    "CM_CF_EB": "CM_CF_CM_EB_CF_EB",
+    "CM_CF_EM": "CM_CF_CM_EM_CF_EM",
+    "CM_EB_EM": "CM_EB_CM_EM_EB_EM",
+    "CF_EB_EM": "CF_EB_CF_EM_EB_EM",
+    "CE_CM_CF_EB": "CE_CM_CE_CF_CE_EB_CM_CF_CM_EM_CF_EB",
+    "CE_CM_CF_EM": "CE_CM_CE_CF_CE_EM_CM_CF_CM_EM_CF_EM",
+    "CE_CM_EB_EM": "CE_CM_CE_EB_CE_EM_CM_EB_CM_EM_EB_EM",
+    "CE_CF_EB_EM": "CE_CF_CE_EB_CE_EM_CF_EB_CF_EM_EB_EM",
+    "CM_CF_EB_EM": "CM_CF_CM_EB_CM_EM_CF_EB_CF_EM_EB_EM",
+    "CE_CM_CF_EB_EM": "CE_CM_CE_CF_CE_EB_CE_EM_CM_CF_CM_EB_CM_EM_CF_EB_CF_EM_EB_EM"
+}
+
+# Tool name to abbreviation mapping
+eccDNA_tools_abbreviations = {
+    'CIRCexplorer2': 'CE',
+    'Circle-Map': 'CM',
+    'Circle_finder': 'CF',
+    'ecc_finder-bwa': 'EB',
+    'ecc_finder-minimap2': 'EM',
+    'segemehl': 'SE',
+}
+
+eccDNA_tool_abbreviations_r = {
+    'CE_CM': 'CE_CM',
+    'CE_CF': 'CE_CF',
+    'CE_EB': 'CE_EB',
+    'CE_EM': 'CE_EM',
+    'CM_CF': 'CM_CF',
+    'CM_EB': 'CM_EB',
+    'CM_EM': 'CM_EM',
+    'CF_EB': 'CF_EB',
+    'CF_EM': 'CF_EM',
+    'EB_EM': 'EB_EM',
+}
+
+def process_eccDNA_filtering(filtering):
+    # Define paths
+    filtering_base_dir = f'/data/benchmarking/data/insilico/eccDNA/{filtering}'
+    output_base_dir = f'/data/benchmarking/results/eccDNA/insilico/{filtering}'
+    
+    # Analyze circular combinations
+    analyze_circular_combination(filtering_base_dir, eccDNA_bed, output_base_dir, eccDNA_tools, eccDNA_tools_abbreviations)
+
+    # Perform rosette operation
+    circular_dir_ros = f'{filtering_base_dir}/intersect'
+    output_dir_ros = f'{filtering_base_dir}/rosette'
+    rosette(eccDNA_bed, circular_dir_ros, output_dir_ros, eccDNA_tool_abbreviations_r)
+    # Process combinations
+    for combine in combination:
+        combine_dir = f'{filtering_base_dir}/{combine}'
+        calculate_statistics(combine_dir, eccDNA_bed, output_base_dir, name=combine)
+
+    # Paths for combination statistics
+    union_path = f'{output_base_dir}/union_statistics.csv'
+    rosette_path = f'{output_base_dir}/rosette_statistics.csv'
+    intersect_path = f'{output_base_dir}/intersect_statistics.csv'
+    output_path = f'{output_base_dir}/combination_stats.xlsx'
+
+    # Generate combination stats
+    generate_combination_stats(union_path, rosette_path, intersect_path, output_path, eccDNA_real_combinations, eccDNA_ros_combinations_mapping)
+
+# Combinaciones reales (usando guiones bajos en lugar de guiones medios)
+circRNA_real_combinations = [
+    "CE", "CF", "CQ", "FC", "SE", "CE_CF", "CE_CQ", "CE_FC", "CE_SE", "CF_CQ", 
+    "CF_FC", "CF_SE", "CQ_FC", "CQ_SE", "FC_SE", "CE_CF_CQ", "CE_CF_FC", 
+    "CE_CF_SE", "CE_CQ_FC", "CE_CQ_SE", "CE_FC_SE", "CF_CQ_FC", "CF_CQ_SE", 
+    "CF_FC_SE", "CQ_FC_SE", "CE_CF_CQ_FC", "CE_CF_CQ_SE", "CE_CF_FC_SE", 
+    "CE_CQ_FC_SE", "CF_CQ_FC_SE", "CE_CF_CQ_FC_SE"
+]
+
+# Combinaciones adaptadas para Rosette
+circRNA_ros_combinations_mapping = {
+    "CE_CF_CQ": "CE_CF_CE_CQ_CF_CQ",
+    "CE_CF_FC": "CE_CF_CE_FC_CF_FC",
+    "CE_CF_SE": "CE_CF_CE_SE_CF_SE",
+    "CE_CQ_FC": "CE_CQ_CE_FC_CQ_FC",
+    "CE_CQ_SE": "CE_CQ_CE_SE_CQ_SE",
+    "CE_FC_SE": "CE_FC_CE_SE_FC_SE",
+    "CF_CQ_FC": "CF_CQ_CF_FC_CQ_FC",
+    "CF_CQ_SE": "CF_CQ_CF_SE_CQ_SE",
+    "CF_FC_SE": "CF_FC_CF_SE_FC_SE",
+    "CQ_FC_SE": "CQ_FC_CQ_SE_FC_SE",
+    "CE_CF_CQ_FC": "CE_CF_CE_CQ_CE_FC_CF_CQ_CF_SE_CQ_FC",
+    "CE_CF_CQ_SE": "CE_CF_CE_CQ_CE_SE_CF_CQ_CF_SE_CQ_SE",
+    "CE_CF_FC_SE": "CE_CF_CE_FC_CE_SE_CF_FC_CF_SE_FC_SE",
+    "CE_CQ_FC_SE": "CE_CQ_CE_FC_CE_SE_CQ_FC_CQ_SE_FC_SE",
+    "CF_CQ_FC_SE": "CF_CQ_CF_FC_CF_SE_CQ_FC_CQ_SE_FC_SE",
+    "CE_CF_CQ_FC_SE": "CE_CF_CE_CQ_CE_FC_CE_SE_CF_CQ_CF_FC_CF_SE_CQ_FC_CQ_SE_FC_SE"
+}
+# Tool name to abbreviation mapping
+circRNA_tools_abbreviations = {
+    'CIRCexplorer2': 'CE',
+    'circRNA_finder': 'CF',
+    'CIRIquant': 'CQ',
+    'find_circ': 'FC',
+    'segemehl': 'SE',
+} 
+
+circRNA_tool_abbreviations_r = {
+    'CE_CF': 'CE_CF',
+    'CE_CQ': 'CE_CQ',
+    'CE_FC': 'CE_FC',
+    'CE_SE': 'CE_SE',
+    'CF_CQ': 'CF_CQ',
+    'CF_FC': 'CF_FC',
+    'CF_SE': 'CF_SE',
+    'CQ_FC': 'CQ_FC',
+    'CQ_SE': 'CQ_SE',
+    'FC_SE': 'FC_SE',
+}
+
+def process_circRNA_filtering(filtering):
+    # Define paths
+    filtering_base_dir = f'/data/benchmarking/data/insilico/circRNA/{filtering}'
+    output_base_dir = f'/data/benchmarking/results/circRNA/insilico/{filtering}'
+    
+    # Analyze circular combinations
+    analyze_circular_combination(filtering_base_dir, circular_bed, output_base_dir, circRNA_tools, circRNA_tools_abbreviations)
+    # Perform rosette operation
+    circular_dir_ros = f'{filtering_base_dir}/intersect'
+    output_dir_ros = f'{filtering_base_dir}/rosette'
+    rosette(circular_bed, circular_dir_ros, output_dir_ros, circRNA_tool_abbreviations_r)
+    # Process combinations
+    for combine in combination:
+        combine_dir = f'{filtering_base_dir}/{combine}'
+        calculate_statistics(combine_dir, circular_bed, output_base_dir, name=combine)
+
+    # Paths for combination statistics
+    union_path = f'{output_base_dir}/union_statistics.csv'
+    rosette_path = f'{output_base_dir}/rosette_statistics.csv'
+    intersect_path = f'{output_base_dir}/intersect_statistics.csv'
+    output_path = f'{output_base_dir}/combination_stats.xlsx'
+
+    # Generate combination stats
+    generate_combination_stats(union_path, rosette_path, intersect_path, output_path, circRNA_real_combinations, circRNA_ros_combinations_mapping)
+
+
 def write_statistics_to_csv(statistics, output_dir):
     """
     Write statistics to a CSV file.
