@@ -8,79 +8,6 @@ import seaborn as sns
 from scipy.stats import ks_2samp
 from matplotlib.patches import Rectangle
 
-def length_stats(circular_bed, filter_directory, tools, output_base_name, circle_type):
-    """
-    Generate KDE plots comparing the distributions of filtered detections for multiple tools.
-
-    Parameters:
-        circular_bed (str): Path to the known circular BED file (ground truth).
-        filter_directory (str): Directory containing filtered detection BED files.
-        tools (list): List of tool names.
-        output_base_name (str): Base name for output files.
-        circle_type (str): Circle type.
-    
-    Returns:
-        None
-    """
-     # Load lengths from known circles BED file
-    known_lengths = np.loadtxt(circular_bed, usecols=(2,), dtype=int) - np.loadtxt(circular_bed, usecols=(1,), dtype=int)
-    known_lengths_df = pd.DataFrame({'Length': known_lengths, 'Tool': 'Simulated'})
-    
-    # Prepare a DataFrame for all tool lengths (starting with known circles as "Simulated")
-    all_data = known_lengths_df.copy()
-
-    # Loop through each tool and extract filtered lengths
-    for tool in tools:
-        filtered_file = os.path.join(filter_directory, tool, f'cov30_{tool}.bed')
-        if os.path.exists(filtered_file):
-            filtered_lengths = np.loadtxt(filtered_file, usecols=(2,), dtype=int) - np.loadtxt(filtered_file, usecols=(1,), dtype=int)
-            tool_df = pd.DataFrame({'Length': filtered_lengths, 'Tool': tool})
-            all_data = pd.concat([all_data, tool_df], ignore_index=True)
-
-
-    # 3. Perform Kolmogorov-Smirnov test for full length data (<10000)
-    simulated_lengths = all_data[(all_data['Tool'] == 'Simulated') & (all_data['Length'] < 10000)]['Length']
-    ks_results_full = []
-
-    # Compare simulated lengths with each tool's filtered lengths using KS test
-    for tool in tools:
-        tool_lengths = all_data[(all_data['Tool'] == tool) & (all_data['Length'] < 10000)]['Length']
-        if len(tool_lengths) > 0:  # Ensure there's data to compare
-            ks_stat, p_value = ks_2samp(simulated_lengths, tool_lengths)
-            ks_results_full.append((tool, ks_stat, p_value))
-            print(f"KS test (full) between Simulated and {tool}: KS Statistic = {ks_stat}, p-value = {p_value}")
-
-    # Save full-length KS test results to a CSV file with circle_type in the filename
-    ks_df_full = pd.DataFrame(ks_results_full, columns=['Tool', 'KS Statistic', 'p-value'])
-    ks_df_full['Circle Type'] = circle_type  # Add circle_type to the DataFrame
-    ks_output_path_full = os.path.join(output_directory, f'{circle_type}_ks_test_results_full.csv')
-    ks_df_full.to_csv(ks_output_path_full, index=False)
-
-    print(f"Kolmogorov-Smirnov test results (full) saved to {ks_output_path_full}")
-
-    # 4. Perform Kolmogorov-Smirnov test for short lengths (<1000)
-    simulated_lengths_short = all_data[(all_data['Tool'] == 'Simulated') & (all_data['Length'] < 1000)]['Length']
-    ks_results_short = []
-
-    # Compare simulated short lengths with each tool's filtered short lengths using KS test
-    for tool in tools:
-        tool_lengths_short = all_data[(all_data['Tool'] == tool) & (all_data['Length'] < 1000)]['Length']
-        if len(tool_lengths_short) > 0:  # Ensure there's data to compare
-            ks_stat, p_value = ks_2samp(simulated_lengths_short, tool_lengths_short)
-            ks_results_short.append((tool, ks_stat, p_value))
-            print(f"KS test (short) between Simulated and {tool}: KS Statistic = {ks_stat}, p-value = {p_value}")
-
-    # Save short-length KS test results to a CSV file with circle_type in the filename
-    ks_df_short = pd.DataFrame(ks_results_short, columns=['Tool', 'KS Statistic', 'p-value'])
-    ks_output_path_short = os.path.join(output_directory, f'{circle_type}_ks_test_results_short.csv')
-    ks_df_short.to_csv(ks_output_path_short, index=False)
-
-    print(f"Kolmogorov-Smirnov test results (short) saved to {ks_output_path_short}")
-
-    return output_path, output_path_short, ks_output_path_full, ks_output_path_short
-
-
-
 def plot_length_distributions(circular_bed, filter_directory, tools, output_base_name, circle_type, draw_rectangle=True, min_length=320, max_length=480):
     """
     Generate KDE plots comparing the relative and absolute length distributions of filtered detections for multiple tools.
@@ -147,7 +74,6 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
 
         # Count the number of circles per interval for each tool
         length_counts = data.groupby(['Tool', 'Length_Interval']).size().reset_index(name='Count')
-
         # Get the counts for Simulated lengths in the same intervals
         simulated_counts = length_counts[length_counts['Tool'] == 'Simulated'][['Length_Interval', 'Count']]
         simulated_counts.rename(columns={'Count': 'Simulated_Count'}, inplace=True)
@@ -160,8 +86,8 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         relative_data = relative_data[relative_data['Tool'] != 'Simulated']
 
         # Plot relative length distributions
-        plt.figure(figsize=(14, 5))
-        g = sns.lineplot(data=relative_data, x="Length_Interval", y="Relative", hue="Tool", marker='o', palette=color_palette)
+        plt.figure(figsize=(10, 5))
+        g = sns.lineplot(data=relative_data, x="Length_Interval", y="Relative", hue="Tool", marker='o', palette=color_palette,  hue_order=tools)
 
         # Customize the x-axis labels
         if is_short:
@@ -178,9 +104,10 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         plt.ylim([0, 2])
         plt.axhline(1, color='#b3b3b3', linestyle='--', label='Ideal Detection')  # Original grey line for "Ideal Detection"
         plt.xlabel('Length (bp)', fontsize=16)
-        plt.ylabel('# Relative Count', fontsize=16)
+        plt.ylabel(f'# Relative {circle_type}', fontsize=16)
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-        plt.grid(True, linestyle='--', alpha=0.6)
+        #plt.legend([], frameon=False)
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
 
         # Draw the rectangle if enabled
         if draw_rectangle:
@@ -196,7 +123,6 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         plt.show()
         plt.close()
 
-        print(f"Relative length distribution plot saved to {output_filename}")
 
 
     def plot_absolute_distribution(data, length_range, bins, output_filename, title, smoothing_window, min_length, max_length, draw_rectangle, is_short=True):
@@ -232,19 +158,13 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         length_counts['Count'] = length_counts.groupby('Tool')['Count'].transform(lambda x: x.rolling(window=smoothing_window, min_periods=1, center=True).mean())
 
         # Plot absolute length distributions
-        plt.figure(figsize=(14, 5))
+        plt.figure(figsize=(10, 5))
 
         # Map colors to tools
-        color_mapping = {"Simulated": "#b3b3b3"}
-        tool_list = length_counts['Tool'].unique()
-        color_idx = 0  # Index for other tools
-
-        for tool in tool_list:
-            if tool != "Simulated":
-                color_mapping[tool] = color_palette[color_idx]
-                color_idx += 1  # Move to the next color in the palette
-
-        g = sns.lineplot(data=length_counts, x="Length_Interval", y="Count", hue="Tool", marker='o', palette=color_mapping)
+        color_mapping = ["#b3b3b3"] + color_palette
+        tool_order = ["Simulated"] + tools
+        
+        g = sns.lineplot(data=length_counts, x="Length_Interval", y="Count", hue="Tool", marker='o', palette=color_mapping, hue_order=tool_order)
 
         # Customize the x-axis labels
         if is_short:
@@ -259,8 +179,8 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
             plt.xlim(100, 10500)  # Cut the graph at 1000
 
         plt.xlabel('Length (bp)', fontsize=16)
-        plt.ylabel('# Count', fontsize=16)
-        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.ylabel(f'# {circle_type}', fontsize=16)
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
 
         # Draw the rectangle if enabled
         if draw_rectangle:
@@ -271,6 +191,7 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         sorted_handles_labels = sorted(zip(handles, labels), key=lambda x: x[1] != "Simulated")
         sorted_handles, sorted_labels = zip(*sorted_handles_labels)
         plt.legend(sorted_handles, sorted_labels, loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+        #plt.legend([], frameon=False)
 
         # Save the plot
         sns.despine()
@@ -281,8 +202,6 @@ def plot_length_distributions(circular_bed, filter_directory, tools, output_base
         plt.savefig(output_filename, dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
-
-        print(f"Absolute length distribution plot saved to {output_filename}")
 
     # Plot short lengths (< 1000 bp) with a colored rectangle between min_length-max_length (if draw_rectangle=True)
     plot_relative_distribution(
@@ -351,3 +270,72 @@ def apply_smoothing(data, window_size):
         pd.Series: The smoothed data.
     """
     return data.rolling(window=window_size, min_periods=1, center=True).mean()
+
+def distribution_comparison_ks_test(circular_bed, filter_directory, tools, output_base_name, circle_type):
+    """
+    Compare empirical cumulative and relative distributions of circle lengths between simulated and detected circles
+    using the Kolmogorov-Smirnov test, for both all circles and short circles (<1000 bp).
+
+    Parameters:
+        circular_bed (str): Path to the known circular BED file (ground truth).
+        filter_directory (str): Directory containing filtered detection BED files.
+        tools (list): List of tool names.
+        output_base_name (str): Directory to save output CSV.
+        circle_type (str): Circle type label.
+
+    Returns:
+        None
+    """
+    def run_ks_analysis(length_min, length_max, bin_size, suffix):
+        # Load known circle lengths
+        known_lengths = np.loadtxt(circular_bed, usecols=(2,), dtype=int) - np.loadtxt(circular_bed, usecols=(1,), dtype=int)
+        known_lengths = known_lengths[(known_lengths > length_min) & (known_lengths < length_max)]
+        bins = np.arange(length_min, length_max + bin_size, bin_size)
+
+        # Compute the cumulative and relative distribution for simulated data
+        simulated_counts, _ = np.histogram(known_lengths, bins=bins)
+        simulated_cumsum = np.cumsum(simulated_counts) / np.sum(simulated_counts)
+        simulated_rel_freq = simulated_counts / np.sum(simulated_counts)
+
+        ks_results = []
+
+        for tool in tools:
+            filtered_file = os.path.join(filter_directory, tool, f'cov30_{tool}.bed')
+            if os.path.exists(filtered_file):
+                try:
+                    tool_lengths = np.loadtxt(filtered_file, usecols=(2,), dtype=int) - np.loadtxt(filtered_file, usecols=(1,), dtype=int)
+                    tool_lengths = tool_lengths[(tool_lengths > length_min) & (tool_lengths < length_max)]
+
+                    # Compute the cumulative and relative distributions for the tool's detected circles
+                    tool_counts, _ = np.histogram(tool_lengths, bins=bins)
+                    tool_cumsum = np.cumsum(tool_counts) / np.sum(tool_counts)
+                    tool_rel_freq = tool_counts / np.sum(tool_counts)
+
+                    # Perform KS test for absolute distribution
+                    ks_stat_absolute, p_value_absolute = ks_2samp(simulated_counts, tool_counts)
+                    ks_results.append((tool, ks_stat_absolute, p_value_absolute))
+
+                    print(f"KS test (Absolute) between Simulated and {tool} ({suffix}): KS Statistic = {ks_stat_absolute:.4f}, p-value = {p_value_absolute:.4g}")
+                
+                except Exception as e:
+                    print(f"Error processing tool {tool} ({suffix}): {e}")
+            else:
+                print(f"Filtered file for {tool} not found at {filtered_file}.")
+
+        # Create DataFrame for storing the results
+        ks_df = pd.DataFrame(ks_results, columns=['Tool', 'KS Statistic', 'p-value'])
+        ks_df['Circle Type'] = f"{circle_type}_{suffix}"
+
+        # Save the results to a CSV file
+        os.makedirs(output_base_name, exist_ok=True)
+        output_path = os.path.join(output_base_name, f"{circle_type}_{suffix}_ks_comparison_test.csv")
+        ks_df.to_csv(output_path, index=False)
+
+    # Run for all lengths
+    run_ks_analysis(length_min=0, length_max=10000, bin_size=500, suffix='all')
+
+    # Run for short circles (<1000 bp)
+    run_ks_analysis(length_min=0, length_max=1000, bin_size=20, suffix='short')
+
+    # Run for square circles
+    run_ks_analysis(length_min=320, length_max=480, bin_size=20, suffix='short')
