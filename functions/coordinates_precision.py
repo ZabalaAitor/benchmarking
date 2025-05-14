@@ -41,215 +41,130 @@ def compare_bed_files_threshold(file1_list, file2_list, thresholds):
 
 def plot_coordinates_precision(tools, coverages, circular_bed, circular_dir, output_dir, circle_type):
     """
-    Function to plot common circle counts for different thresholds across multiple tools.
+    This function evaluates the precision of coordinate detection for circular DNA or RNA across various tools and coverage levels.
+    It uses a known simulated BED file (circular_bed) as the reference and compares it to detected circles.
+    
+    For each tool and coverage level:
+    - The function computes overlap with the ground truth at various thresholds.
+    - Fits a linear regression to assess the asymptotic maximum number of detected circles (intercept at 1/threshold → 0).
+    - Computes precision-like metrics:
+        - count1_over_b: count at T=1 over the estimated maximum (b)
+        - count2_over_b: count at T=2 over the estimated maximum (b)
+        - count1_over_count2: ratio between T=1 and T=2
+    
+    These are plotted across tools and coverages to visualize precision trends.
 
     Parameters:
-        tools (list): List of tool names.
-        coverages (list): List of coverage values.
-        circular_bed (str): Path to the circular bed file.
-        circular_dir (str): Directory containing circular detection results for each tool.
-        output_dir (str): Directory where results and statistics will be saved.
-        circle_type (str): Circle type.
+        tools (list): Names of tools used to detect circular DNA/RNA.
+        coverages (list): Coverage levels to evaluate (e.g., [5, 10, 30]).
+        circular_bed (str): Path to the simulated BED file with true circles.
+        circular_dir (str): Directory containing BED files for each tool/coverage.
+        output_dir (str): Directory to save output plots.
+        circle_type (str): Label for the circle type (used in axis labels).
     """
-    # Ensure the save directory exists
+    
+    # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Define thresholds (exclude 0 to avoid division by zero)
-    thresholds = [1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 40, 50]
-    
-    # Define the custom color palette
+
+    # Define thresholds for comparing circle overlaps (e.g., for precision measurement)
+    thresholds = [0.1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]
+
+    # Define color palettes
+    colorblind_palette = sns.color_palette('colorblind')  # not used below
     custom_palette = ['#d46014', '#ddcd3d', '#064b76ff', '#63bdf6ff', '#b54582']
-    
-    sqrt_a_values = {tool: [] for tool in tools}  # Store sqrt(a) values for each tool
 
-    # Create a figure with subplots arranged horizontally
-    num_tools = len(tools)
-    fig, axes = plt.subplots(1, num_tools, figsize=(8 * num_tools, 6), sharey=True)
-    
-    # If there's only one subplot, axes is not an array, so we need to make it an array
-    if num_tools == 1:
-        axes = [axes]
-
-    # Prepare a list to store the printed results for CSV
-    print_results = []
-
-    # Loop over each tool and plot the common circle counts in the corresponding subplot
-    for i, tool in enumerate(tools):
-        # Generate paths for the current folder
+    # For each tool, precompute common counts between the ground truth and detected circles
+    for tool in tools:
         folder_path = f'{circular_dir}/{tool}/'
+        # Generate file paths for each coverage level
         circular_detection_list = [f'{folder_path}cov{cov}_{tool}.bed' for cov in coverages]
-
-        # Compare bed files for different thresholds
+        # Compare each file against the ground truth using thresholds
         common_counts = compare_bed_files_threshold([circular_bed], circular_detection_list, thresholds)
 
-        # Plot common counts for different thresholds for each file
-        for j, (file1, counts_dict) in enumerate(common_counts.items()):
-            counts = list(counts_dict.values())  # Convert dictionary values to a list
+    # Define the metrics to compute and plot
+    for metric_name, x_values_func in {
+        'count1_over_b': lambda count1, count2, b: count1 / b if b != 0 else np.nan,
+        'count2_over_b': lambda count1, count2, b: count2 / b if b != 0 else np.nan,
+        'count1_over_count2': lambda count1, count2, b: count1 / count2 if count2 != 0 else np.nan,
+    }.items():
 
-            # Flatten counts array in case it is 2D
-            counts = np.ravel(counts)  # Ensure 'counts' is 1D
+        plt.figure(figsize=(5, 4))  # Create a new figure for each metric
 
-            if len(counts) != len(thresholds):
-                print(f"Error: counts length ({len(counts)}) does not match thresholds length ({len(thresholds)})")
-                continue
+        for i, tool in enumerate(tools):
+            folder_path = f'{circular_dir}/{tool}/'
+            circular_detection_list = [f'{folder_path}cov{cov}_{tool}.bed' for cov in coverages]
+            common_counts = compare_bed_files_threshold([circular_bed], circular_detection_list, thresholds)
 
-            # Prepare transformed x (1/x)
-            inv_thresholds = 1 / np.array(thresholds)
+            x_values = []  # Metric values (x-axis)
+            b_values = []  # Max circle count estimates (y-axis)
 
-            try:
-                # Perform linear regression on transformed data
-                slope, intercept, r_value, p_value, std_err = stats.linregress(inv_thresholds, counts)
-                a = -slope  # 'a' in the original equation
-                b = intercept  # 'b' in the original equation
+            for j, (file1, counts_dict) in enumerate(common_counts.items()):
+                counts_list = list(counts_dict.values())
+                if len(counts_list) != len(thresholds):
+                    continue  # Skip if the count list doesn't match the number of thresholds
 
-                # Calculate the square root of 'a'
-                a_sqrt = np.sqrt(a)
+                counts = np.ravel(counts_list)
+                inv_thresholds = 1 / np.array(thresholds)  # Inverse thresholds for linear modeling
 
-                # Append sqrt(a) value for the current tool
-                sqrt_a_values[tool].append(a_sqrt)
+                try:
+                    # Fit a line: counts = a*(1/T) + b => b is used as max estimated number of circles
+                    slope, intercept, _, _, _ = stats.linregress(inv_thresholds, counts)
+                    a = -slope
+                    b = intercept
+                    count1 = counts_dict[1][0]  # Count at threshold T=1
+                    count2 = counts_dict[2][0]  # Count at threshold T=2
 
-                # Print the parameters 'a', 'sqrt(a)' along with the corresponding coverage
-                result = {
-                    'Tool': tool,
-                    'Coverage': coverages[j],
-                    'b': b,
-                    'a': a,
-                    'sqrt(a)': a_sqrt
-                }
-                print_results.append(result)  # Add result to the list
+                    x_value = x_values_func(count1, count2, b)  # Compute selected metric
+                    if not np.isnan(x_value):
+                        x_values.append(x_value)
+                        b_values.append(b)
+                except Exception:
+                    continue  # Skip failed regressions
 
-                # Extract label from the filename
-                label = os.path.basename(file1).split('_')[0]
+            # Sort values according to coverage for smooth plotting
+            sorted_indices = np.argsort(coverages)
+            x_values = np.array(x_values)[sorted_indices]
+            b_values = np.array(b_values)[sorted_indices]
+            coverages_sorted = np.array(coverages)[sorted_indices]
 
-                # Plot the actual data in the corresponding subplot
-                axes[i].plot(thresholds, counts, marker='o', color=custom_palette[j % len(custom_palette)], label=label)
+            tool_color = custom_palette[i]
 
-            except ValueError as e:
-                print(f"Error fitting curve for {tool}: {e}")
-                continue
+            # Plot line segments between each pair of points
+            for j in range(1, len(x_values)):
+                coverage_ratio = (coverages_sorted[j] - min(coverages_sorted)) / (max(coverages_sorted) - min(coverages_sorted))
+                alpha_value = 0.3 + 0.7 * coverage_ratio  # Transparency based on coverage
+                line = plt.plot(x_values[j-1:j+1], b_values[j-1:j+1], color=tool_color, linewidth=3, alpha=alpha_value)
+                if j == 1:
+                    line[0].set_label(tool)  # Add label only once per tool
 
-        # Customize each subplot
-        axes[i].set_xlabel('Threshold (bp)', fontsize=12)
-        axes[i].set_ylabel(f'# True {circle_type}', fontsize=12)
-        axes[i].set_title(f'{tool}', fontsize=14)
-        axes[i].grid(True, linestyle='--', alpha=0.7)
-        axes[i].set_ylim(0, 1000)  # Limitar el eje Y a 1000
-        sns.despine(top=True, right=True)
-    
-    # Add a single legend with numeric coverage values
-    handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', markersize=8) 
-            for j, color in enumerate(custom_palette)]
-    labels = coverages
-    fig.legend(handles, labels, title="Coverage", frameon=False, fontsize=10, 
-            loc='upper left', bbox_to_anchor=(0.95, 0.65), ncol=1)
+        # Plot formatting
+        plt.ylim(0, 1050)
+        plt.xlim(0, 1.05)
+        plt.axhline(y=1000, linestyle='--', linewidth=1, color='grey')  # Reference line at 1000
+        plt.legend([], frameon=False, fontsize=16)
+        plt.xticks(fontsize=16)
+        plt.yticks(fontsize=16)
 
-    # Set a common title for the entire figure
-    fig.suptitle(f'Coordinates precision of {circle_type} detection software', fontsize=16)
+        # Axis labels and output filename per metric
+        if metric_name == 'count1_over_b':
+            xlabel = rf'$\frac{{\#\, {circle_type}_{{\mathrm{{T}}=1}}}}{{\#\, {circle_type}_{{\mathrm{{max}}}}}}$'
+            filename = 'count1_over_b.png'
+        elif metric_name == 'count2_over_b':
+            xlabel = rf'$\frac{{\#\, {circle_type}_{{\mathrm{{T}}=2}}}}{{\#\, {circle_type}_{{\mathrm{{max}}}}}}$'
+            filename = 'count2_over_b.png'
+        elif metric_name == 'count1_over_count2':
+            xlabel = rf'$\frac{{\#\, {circle_type}_{{T=1}}}}{{\#\, {circle_type}_{{T=2}}}}$'
+            filename = 'count1_over_count2.png'
+        else:
+            xlabel = 'Metric'
+            filename = f'{metric_name}.png'
 
-    # Adjust layout and save the plot
-    plt.tight_layout(rect=[0, 0, 0.95, 1])  # Adjust layout to make room for the suptitle and legend
-    save_path = os.path.join(output_dir, 'common_circles_count_all_tools.png')
-    plt.savefig(save_path, dpi=300)
-
-    # Show the combined plot
-    plt.show()
-
-    # Save the results in a CSV file with rounded values
-    csv_file_path = os.path.join(output_dir, 'precision_analysis_results.csv')
-    header = ['Tool', 'Coverage', 'sqrt(a)', 'b']
-
-    # Open the CSV file for writing
-    with open(csv_file_path, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(header)
-
-        # Write each result from print_results, rounding the values to 2 decimal places
-        for result in print_results:
-            rounded_result = [result['Tool'], result['Coverage'], round(result['sqrt(a)'], 2), round(result['b'], 2)]
-            writer.writerow(rounded_result)
-
-    # Clear the figure for the next iteration
-    plt.clf()  # Clear the figure to avoid overlap
-
-    ### NEW GRAPH FOR sqrt(a) vs b ###
-
-    plt.figure(figsize=(12,4))
-
-    for i, tool in enumerate(tools):
-        folder_path = f'{circular_dir}/{tool}/'
-        circular_detection_list = [f'{folder_path}cov{cov}_{tool}.bed' for cov in coverages]
-
-        common_counts = compare_bed_files_threshold([circular_bed], circular_detection_list, thresholds)
-
-        sqrt_a_values = []
-        b_values = []
-
-        for j, (file1, counts_dict) in enumerate(common_counts.items()):
-            counts = np.ravel(list(counts_dict.values()))
-
-            if len(counts) != len(thresholds):
-                print(f"Error: counts length ({len(counts)}) does not match thresholds length ({len(thresholds)})")
-                continue
-
-            inv_thresholds = 1 / np.array(thresholds)
-
-            try:
-                slope, intercept, _, _, _ = stats.linregress(inv_thresholds, counts)
-                a = -slope
-                b = intercept
-
-                sqrt_a_values.append(np.sqrt(a))
-                b_values.append(b)
-            except ValueError as e:
-                print(f"Error fitting curve for {tool}: {e}")
-                continue
-
-        sorted_indices = np.argsort(coverages)
-        sqrt_a_values = np.array(sqrt_a_values)[sorted_indices]
-        b_values = np.array(b_values)[sorted_indices]
-        coverages_sorted = np.array(coverages)[sorted_indices]
-
-        # Get the color for the current tool
-        tool_color = custom_palette[i]
-
-        # Apply a color gradient for the line segments based on coverage
-        for j in range(1, len(sqrt_a_values)):
-            # Define line segment's color intensity based on coverage (gradually increasing)
-            coverage_ratio = (coverages_sorted[j] - min(coverages_sorted)) / (max(coverages_sorted) - min(coverages_sorted))
-
-            # Set the alpha value based on coverage: start more transparent and become more opaque
-            alpha_value = 0.3 + 0.7 * coverage_ratio  # Alpha goes from 0.3 (more transparent) to 1 (fully opaque)
-
-            # Plot the line segment with the adjusted transparency (alpha)
-            # No marker is specified, so it should only plot the line
-            line = plt.plot(sqrt_a_values[j-1:j+1], b_values[j-1:j+1], color=tool_color, linewidth=3, alpha=alpha_value)
-
-            # Add the label for the legend once per tool
-            if j == 1:  # Only add the legend label for the first line segment
-                line[0].set_label(tool)
-
-    
-    plt.ylim(0, 1050)  
-    
-    # Create a custom legend with circles (using Line2D for the legend)
-    legend_elements = [mlines.Line2D([0], [0], color=tool_color, label=tool) for tool, tool_color in zip(tools, custom_palette)]
-
-    # Add the custom legend to the plot
-    plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    
-    # Set larger tick labels
-    plt.xticks(fontsize=16)  # Increase x-tick size
-    plt.yticks(fontsize=16)  # Increase y-tick size
-
-    # Display the plot
-    plt.xlabel(r'$\sqrt{a}$', fontsize=16)
-    plt.ylabel('b', fontsize=16)
-    #plt.title(f'Precision Analysis of {circle_type} Detection Tools', fontsize=16)
-    plt.grid(True, linestyle='--', alpha=0.7)
-    sns.despine()
-
-    # Save the plot
-    save_path = os.path.join(output_dir, 'precision_analysis.png')
-    plt.tight_layout(rect=[0, 0, 0.85, 1])
-    plt.savefig(save_path, dpi=300)
-    plt.show()
+        # Finalize and save plot
+        plt.xlabel(xlabel, fontsize=20)
+        plt.ylabel(rf'$\#\, {circle_type}_{{\mathrm{{max}}}}$', fontsize=16)
+        plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
+        sns.despine()
+        plt.tight_layout(rect=[0, 0, 0.85, 1])
+        save_path = os.path.join(output_dir, filename)
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0.1)
+        plt.show()
