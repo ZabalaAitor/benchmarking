@@ -55,7 +55,7 @@ def plot_circular_detection(csv_path, title, save_directory=None, circle_type='e
         plt.ylim(0, 1.05)  
     
     # Add the custom legend to the plot
-    #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
 
     # Save plot if save_directory is provided
     if save_directory:
