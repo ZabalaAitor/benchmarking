@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 from scipy import stats
 import seaborn as sns
@@ -338,4 +337,4 @@ def distribution_comparison_ks_test(circular_bed, filter_directory, tools, outpu
     run_ks_analysis(length_min=0, length_max=1000, bin_size=20, suffix='short')
 
     # Run for square circles
-    run_ks_analysis(length_min=320, length_max=480, bin_size=20, suffix='short')
+    run_ks_analysis(length_min=320, length_max=480, bin_size=20, suffix='square')
