@@ -63,7 +63,7 @@ def annotate_genomic_elements(bed_file, output_dir, gene_file, exon_file, other_
             start_pos = int(cols[3])
             end_pos = int(cols[4])
             annotation = cols[2]  # Get the annotation from the second column
-            if chro-mosome not in other_data:
+            if chromosome not in other_data:
                 other_data[chromosome] = []
             other_data[chromosome].append((start_pos, end_pos, annotation))
 
@@ -141,6 +141,19 @@ def annotate_bed_files_genomic_elements(bed_files, output_dir, tools, true_or_fa
         annotate_genomic_elements(bed_file, annotated_bsj_file, gene_file, exon_file, other_file)
 
 def process_genomic_elements(annotated_files, output_csv, tools):
+    """
+    Process annotated BED files to count genomic element combinations (genomic_start and genomic_end) 
+    across multiple tools and aggregate the results into a CSV file.
+
+    Parameters:
+        annotated_files (list of str): List of file paths to annotated BED files. Each file is expected 
+                                       to contain five columns: chr, start, end, genomic_start, genomic_end.
+        output_csv (str): Path to the output CSV file where the combined count matrix will be saved.
+        tools (list of str): List of tool identifiers used to map file names to their corresponding tool.
+
+    Returns:
+        None: The function saves the output as a CSV file and does not return any value.
+    """
     # Dictionary to store counts of genomic elements
     genomic_counts = defaultdict(lambda: defaultdict(int))
     
@@ -280,9 +293,22 @@ def calculate_genomic_element_metrics(tp_file, fn_file, fp_file, output_dir, too
 
 def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
     """
-    Plots and saves two dot plots of genomic element statistics by tool:
-    1. All genomic element combinations.
-    2. Only identical genomic element combinations (e.g., LINE-LINE, SINE-SINE).
+    Generate and save dot plots to visualize genomic element statistics for different tools.
+
+    This function creates two dot plots based on a CSV file containing metric values 
+    (e.g., precision, recall, F-score) for genomic element combinations:
+        1. A dot plot including all combinations of genomic elements (e.g., LINE-SINE, LINE-LTR).
+        2. A dot plot specifically highlighting identical element combinations (e.g., LINE-LINE, SINE-SINE).
+
+    Parameters:
+        csv_file (str): Path to the input CSV file. It must include a column named 'Genomic Element' and
+                        additional columns for each tool with corresponding metric values.
+        metric_name (str): The name of the metric to plot (e.g., 'precision', 'recall', 'Fscore').
+                           This is used for y-axis labeling and file naming.
+        output_dir (str): Directory where the output plot image will be saved.
+
+    Returns:
+        None: The function saves plot(s) to the specified directory and displays them, but does not return any value.
     """
     # Load the CSV file
     df = pd.read_csv(csv_file)
@@ -294,7 +320,7 @@ def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
     custom_palette = ['#d46014', '#ddcd3d', '#064b76ff', '#63bdf6ff', '#b54582']
     
     # --- PLOT 1: All Combinations ---
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(8, 4.3))
     ax = sns.stripplot(
         data=df_melted,
         x='Genomic Element',
@@ -313,18 +339,28 @@ def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
     
     # Adjust x-axis labels
     new_labels = [label.replace("five_prime_utr", "5'-UTR").replace("three_prime_utr", "3'-UTR") for label in df_melted['Genomic Element'].unique()]
+
+    # Shade every other x-axis label
+    x_labels = df['Genomic Element'].unique()
+    for i, label in enumerate(x_labels):
+        if i % 2 == 0:  # Shade every other label
+            ax.axvspan(i - 0.5, i + 0.5, color='lightgray', alpha=0.3)
+
+    plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
+    sns.despine()
+    plt.ylabel(metric_name.capitalize().replace("Fscore", "F-score"), fontsize=16)
+    plt.xlabel('')
     plt.xticks(rotation=45, ha='right', fontsize=16)
     ax.set_xticklabels(new_labels)
     plt.yticks(fontsize=16)
-    
-    # Remove legend
-    plt.legend([], [], frameon=False)
-    
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    #plt.legend([], [], frameon=False)  
     plt.tight_layout()
     os.makedirs(output_dir, exist_ok=True)
     plt.savefig(f"{output_dir}/{metric_name.lower()}_all_combinations_dotplot.png", dpi=300)
     plt.show()
     plt.close()
+
 
     # --- PLOT 2: Only Identical Combinations ---
 
@@ -344,7 +380,7 @@ def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
     })
     present_genomic_elements_identical = [g for g in genomic_order if g in df_identical_melted['Genomic Element'].unique()]
 
-    plt.figure(figsize=(4.3, 4.1))  # Ensure consistent size
+    plt.figure(figsize=(8, 4))
     ax = sns.stripplot(
         data=df_identical_melted,
         x='Genomic Element',
@@ -357,17 +393,21 @@ def plot_stats_genomic_elements(csv_file, metric_name, output_dir):
         alpha=0.8,
         order=present_genomic_elements_identical  # Apply order dynamically
     )
+  
+    # Shade every other x-axis label
+    x_labels = df_identical['Genomic Element'].unique()
+    for i, label in enumerate(x_labels):
+        if i % 2 == 0:
+            ax.axvspan(i - 0.5, i + 0.5, color='lightgray', alpha=0.3)
+
     plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
     sns.despine()
     plt.ylabel(metric_name.capitalize().replace("Fscore", "F-score"), fontsize=16)
     plt.xlabel('')
-    
     plt.xticks(rotation=45, ha='right', fontsize=16)
     plt.yticks(fontsize=16)
-    
-    # Remove legend
-    plt.legend([], [], frameon=False)
-    
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    #plt.legend([], [], frameon=False)  
     plt.tight_layout()
     plt.savefig(f"{output_dir}/{metric_name.lower()}_identical_combinations_dotplot.png", dpi=300)
     plt.show()

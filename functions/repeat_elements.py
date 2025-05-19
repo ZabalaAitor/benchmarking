@@ -64,52 +64,52 @@ def annotate_repeat_elements(repeats_file, bed_files, output_dir, tools, true_or
         # Save the annotated bed file
         bed_df.to_csv(output_path, sep='\t', index=False, header=False)
        
-def annotate_repeat_elements_real(repeats_file, bed_files, output_dir, tools):
-    """
-    Annotates BED files with repeat element information and saves them.
+# def annotate_repeat_elements_real(repeats_file, bed_files, output_dir, tools):
+#     """
+#     Annotates BED files with repeat element information and saves them.
 
-    Parameters:
-        repeats_file (str): Path to repeat elements data.
-        bed_files (list): List of BED file paths to annotate.
-        output_dir (str): Directory to save annotated files.
-        tools (list): List of tool names for output filenames.
+#     Parameters:
+#         repeats_file (str): Path to repeat elements data.
+#         bed_files (list): List of BED file paths to annotate.
+#         output_dir (str): Directory to save annotated files.
+#         tools (list): List of tool names for output filenames.
 
-    This function annotates BED files with repeat types and saves them to the specified directory.
-    """
-    # Read the repeats file
-    repeats_df = pd.read_csv(repeats_file, sep='\t', header=None, names=['chr', 'start', 'end', 'type'])
+#     This function annotates BED files with repeat types and saves them to the specified directory.
+#     """
+#     # Read the repeats file
+#     repeats_df = pd.read_csv(repeats_file, sep='\t', header=None, names=['chr', 'start', 'end', 'type'])
     
-    # Standardize chromosome notation in repeats_df (remove 'chr' if present)
-    repeats_df['chr'] = repeats_df['chr'].astype(str).str.replace('chr', '')
+#     # Standardize chromosome notation in repeats_df (remove 'chr' if present)
+#     repeats_df['chr'] = repeats_df['chr'].astype(str).str.replace('chr', '')
 
-    # Function to find the repeat type in a specific coordinate
-    def find_repeat_type(chr_, pos, repeats_df):
-        overlaps = repeats_df[(repeats_df['chr'] == str(chr_)) & 
-                              (repeats_df['end'] >= pos) & 
-                              (repeats_df['start'] <= pos)]
-        return ' '.join(overlaps['type'].unique())
+#     # Function to find the repeat type in a specific coordinate
+#     def find_repeat_type(chr_, pos, repeats_df):
+#         overlaps = repeats_df[(repeats_df['chr'] == str(chr_)) & 
+#                               (repeats_df['end'] >= pos) & 
+#                               (repeats_df['start'] <= pos)]
+#         return ' '.join(overlaps['type'].unique())
 
-    # Loop over each bed file and corresponding tool
-    for bed_file, tool_name in zip(bed_files, tools):
-        # Read the bed file
-        bed_df = pd.read_csv(bed_file, sep='\t', header=None, names=['chr', 'start', 'end', 'score'])
+#     # Loop over each bed file and corresponding tool
+#     for bed_file, tool_name in zip(bed_files, tools):
+#         # Read the bed file
+#         bed_df = pd.read_csv(bed_file, sep='\t', header=None, names=['chr', 'start', 'end', 'score'])
         
-        # Convert chromosome column to string for consistency
-        bed_df['chr'] = bed_df['chr'].astype(str).str.replace('chr', '')
+#         # Convert chromosome column to string for consistency
+#         bed_df['chr'] = bed_df['chr'].astype(str).str.replace('chr', '')
 
-        # Annotate the bed file with repeat types
-        bed_df['repeat_start'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['start'], repeats_df), axis=1)
-        bed_df['repeat_end'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['end'], repeats_df), axis=1)
+#         # Annotate the bed file with repeat types
+#         bed_df['repeat_start'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['start'], repeats_df), axis=1)
+#         bed_df['repeat_end'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['end'], repeats_df), axis=1)
 
-        # Set output file name based on the tool name from the provided list
-        output_file_name = f"{tool_name}_repeat_elements.bed"
+#         # Set output file name based on the tool name from the provided list
+#         output_file_name = f"{tool_name}_repeat_elements.bed"
         
-        # Create the output path with the tool name included
-        output_path = os.path.join(output_dir, output_file_name)
-        os.makedirs(output_dir, exist_ok=True)
+#         # Create the output path with the tool name included
+#         output_path = os.path.join(output_dir, output_file_name)
+#         os.makedirs(output_dir, exist_ok=True)
         
-        # Save the annotated bed file
-        bed_df.to_csv(output_path, sep='\t', index=False, header=False)
+#         # Save the annotated bed file
+#         bed_df.to_csv(output_path, sep='\t', index=False, header=False)
 
 def process_repeat_elements(annotated_files, tools, output_csv):
     """
@@ -303,6 +303,7 @@ def calculate_repeat_element_metrics(tp_file, fn_file, fp_file, output_dir, tool
     recall_df.to_csv(recall_file, index=False)
     fscore_df.to_csv(fscore_file, index=False)
 
+
 def plot_stats_repeat_elements(csv_file, metric_name, output_dir):
     """
     Plots and saves two dot plots of repeat element statistics by tool:
@@ -327,25 +328,34 @@ def plot_stats_repeat_elements(csv_file, metric_name, output_dir):
     colorblind_palette = ['#d46014', '#ddcd3d', '#064b76ff', '#63bdf6ff', '#b54582']
 
     # --- PLOT 1: All Combinations ---
-    plt.figure(figsize=(10, 4))
+    fig, ax = plt.subplots(figsize=(12, 3.6))
     sns.stripplot(
         data=df_melted,
         x='Repeat Element',
         y=metric_name,
         hue='Tool',
         palette=colorblind_palette,
-        jitter=True,  # Prevents overlapping
-        dodge=True,   # Separates different tools
-        s=8,          # Adjust dot size
-        alpha=0.8,    # Makes dots semi-transparent
+        jitter=True,  
+        dodge=True,   
+        s=8,          
+        alpha=0.8,    
+        ax=ax
     )
+
+    # Shade every other x-axis label
+    x_labels = df['Repeat Element'].unique()
+    for i, label in enumerate(x_labels):
+        if i % 2 == 0:  # Shade every other label
+            ax.axvspan(i - 0.5, i + 0.5, color='lightgray', alpha=0.3)
+
     plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
     sns.despine()
     plt.ylabel(metric_name.capitalize().replace("Fscore", "F-score"), fontsize=16)
     plt.xlabel('')
     plt.xticks(rotation=45, ha='right', fontsize=16)
     plt.yticks(fontsize=16)
-    plt.legend([], [], frameon=False)  # Remove legend
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    #plt.legend([], [], frameon=False)  
     plt.tight_layout(rect=[0, 0, 0.85, 1])
     os.makedirs(output_dir, exist_ok=True)
     plt.savefig(f"{output_dir}/{metric_name.lower()}_all_combinations_dotplot.png", dpi=300)
@@ -355,11 +365,10 @@ def plot_stats_repeat_elements(csv_file, metric_name, output_dir):
     # --- PLOT 2: Only Identical Combinations ---
     identical_combinations = ['LINE-LINE', 'SINE-SINE', 'Satellite-Satellite', 'DNA-DNA', 'Other-Other', 'Ø-Ø']
     df_identical = df[df['Repeat Element'].isin(identical_combinations)]
-
     df_identical_melted = df_identical.melt(id_vars=['Repeat Element'], var_name='Tool', value_name=metric_name)
-    df_identical_melted['Repeat Element'] = df_identical_melted['Repeat Element'].str.split('-').str[0]  # Simplify names
+    df_identical_melted['Repeat Element'] = df_identical_melted['Repeat Element'].str.split('-').str[0]
 
-    plt.figure(figsize=(5,4))  # Match size with the first plot
+    fig, ax = plt.subplots(figsize=(8, 4))
     sns.stripplot(
         data=df_identical_melted,
         x='Repeat Element',
@@ -369,16 +378,25 @@ def plot_stats_repeat_elements(csv_file, metric_name, output_dir):
         jitter=True,
         dodge=True,
         s=8,
-        alpha=0.8
-    ) 
+        alpha=0.8,
+        ax=ax
+    )
+
+    # Shade every other x-axis label
+    x_labels = df_identical['Repeat Element'].unique()
+    for i, label in enumerate(x_labels):
+        if i % 2 == 0:
+            ax.axvspan(i - 0.5, i + 0.5, color='lightgray', alpha=0.3)
+
     plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
     sns.despine()
     plt.ylabel(metric_name.capitalize().replace("Fscore", "F-score"), fontsize=16)
     plt.xlabel('')
     plt.xticks(rotation=45, ha='right', fontsize=16)
     plt.yticks(fontsize=16)
-    plt.legend([], [], frameon=False)  # Remove legend
-    plt.tight_layout(rect=[0, 0, 0.85, 1])  # Ensure same margins
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    #plt.legend([], [], frameon=False)  
+    plt.tight_layout()#rect=[0, 0, 0.85, 1])  
     plt.savefig(f"{output_dir}/{metric_name.lower()}_identical_combinations_dotplot.png", dpi=300)
     plt.show()
     plt.close()
