@@ -725,7 +725,7 @@ def compare_combinations(base_path):
     """
 
     # Define filtering methods and corresponding file paths
-    filtering_options = ['unfilter', 'filter_split', 'filter_duplicates', 'filter']
+    filtering_options = ['unfilter', 'filter-split', 'filter-duplicates', 'filter']
     file_paths = {f: f"{base_path}/{f}/combination_stats.xlsx" for f in filtering_options}
 
     # Define metrics and combination methods
