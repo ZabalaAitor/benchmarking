@@ -319,6 +319,11 @@ def circle_diff_real(matrix_dir, tools, filtering_methods, data, n_threshold=9, 
         for filtering_method in filtering_methods:
             load_matrix_data(filtering_method, tool)
 
+    # Save summary stats once after all iterations
+    summary_save_path = os.path.join(matrix_dir, data, 'statistics_summary.csv')
+    os.makedirs(os.path.dirname(summary_save_path), exist_ok=True)
+    pd.DataFrame(summary_stats).to_csv(summary_save_path, index=False)
+
     plot_df = pd.DataFrame(plot_data)
 
     if not plot_df.empty:
@@ -573,8 +578,8 @@ def plot_diffCJ_scatterplot(list_dfs):
 
     palette = {
         'unfilter': '#d46014',
-        'filter_split': '#ddcd3d',
-        'filter_duplicates': '#064b76ff',
+        'filter-split': '#ddcd3d',
+        'filter-duplicates': '#064b76ff',
         'filter': '#63bdf6ff'
     }
 
@@ -643,4 +648,108 @@ def plot_diffCJ_scatterplot(list_dfs):
     plt.savefig("results/eccDNA/real/diffCJ_scatterplot.png", dpi=300, bbox_inches="tight")
     plt.show()
 
+
+def compute_ratios(df, method_name):
+    """
+    Compute various ratios based on combination methods for a given dataset.
+
+    Parameters:
+    - df (pd.DataFrame): Input DataFrame with combinations and counts
+    - method_name (str): Name of the method (used for labeling)
+
+    Returns:
+    - pd.DataFrame: DataFrame with computed ratios and method label
+    """
+    df['Ratio_Union_Rosette'] = float('nan')
+    df['Ratio_Union_Intersect'] = float('nan')
+    df['Ratio_Rosette_Double'] = float('nan')
+
+    for key in df['Key'].unique():
+        for filtering in df['Filtering'].unique():
+            subset = df[(df['Key'] == key) & (df['Filtering'] == filtering)]
+            try:
+                n_union = subset.loc[subset['Combination'] == 'union', 'CJ ≥ threshold (n)'].values[0]
+                n_rosette = subset.loc[subset['Combination'] == 'rosette', 'CJ ≥ threshold (n)'].values[0]
+                n_intersect = subset.loc[subset['Combination'] == 'intersect', 'CJ ≥ threshold (n)'].values[0]
+                n_double = subset.loc[subset['Combination'] == 'double', 'CJ ≥ threshold (n)'].values[0]
+
+                ratio_union_rosette = n_union / n_rosette if n_rosette else float('nan')
+                ratio_union_intersect = n_union / n_intersect if n_intersect else float('nan')
+                ratio_rosette_double = n_rosette / n_double if n_double else float('nan')
+
+                mask = (df['Key'] == key) & (df['Filtering'] == filtering)
+                df.loc[mask, 'Ratio_Union_Rosette'] = ratio_union_rosette
+                df.loc[mask, 'Ratio_Union_Intersect'] = ratio_union_intersect
+                df.loc[mask, 'Ratio_Rosette_Double'] = ratio_rosette_double
+
+            except IndexError:
+                print(f"⚠️ Missing combination for Key={key}, Filtering={filtering} in {method_name}")
+
+    df_cut = df.drop_duplicates(subset=['Key', 'Filtering'])[
+        ['Key', 'Filtering', 'Ratio_Union_Rosette', 'Ratio_Union_Intersect', 'Ratio_Rosette_Double']
+    ].copy()
+
+    df_cut['Method'] = method_name
+    df_cut['Ratio_Rosette_Intersect'] = df_cut['Ratio_Union_Intersect'] / df_cut['Ratio_Union_Rosette']
+
+    return df_cut
+
+
+def process_and_plot_ratios(paths):
+    """
+    Process ratio metrics from multiple methods and create violin plots.
+    Saves individual plots and combined_ratios.csv in each method's folder.
+
+    Parameters:
+    - paths (list of tuples): List of (csv_path, method_name) pairs
+
+    Returns:
+    - pd.DataFrame: Combined DataFrame with ratio metrics for all methods
+    """
+    df_combined = pd.DataFrame()
+
+    # Define color palette
+    palette = {
+        'unfilter': '#d46014',
+        'filter_split': '#ddcd3d',
+        'filter_duplicates': '#064b76ff',
+        'filter': '#63bdf6ff'
+    }
+
+    for path, method in paths:
+        df = pd.read_csv(path)
+        if 'Key' in df.columns:
+            df['n_tools'] = df['Key'].apply(lambda x: len(str(x).split('_')))
+        df_cut = compute_ratios(df, method)
+        df_combined = pd.concat([df_combined, df_cut], ignore_index=True)
+
+        # Create plot
+        plt.figure(figsize=(7, 4))
+        ax = plt.gca()
+        sns.violinplot(data=df_cut, x='Filtering', y='Ratio_Rosette_Intersect', palette=palette, ax=ax)
+        ax.set_ylabel("Rosette / Intersect", fontsize=16)
+        ax.set_xlabel('', fontsize=16)
+        ax.set_xticklabels(["unfilter", "filter-split", "filter-duplicates", "filter"], fontsize=16)
+        ax.tick_params(axis='y', labelsize=16)
+        ax.set_title('', fontsize=16)
+        ax.set_ylim(bottom=0)
+
+        sns.despine()
+        plt.tight_layout()
+
+        # Save to same directory as input CSV
+        method_dir = os.path.dirname(path)
+        os.makedirs(method_dir, exist_ok=True)
+
+        plot_path = os.path.join(method_dir, f"{method}_rosette_intersect_violinplot.png")
+        csv_path = os.path.join(method_dir, "combined_ratios.csv")
+
+        plt.savefig(plot_path, dpi=300)
+        plt.show()
+        plt.close()
+
+        # Save CSV for the individual method
+        df_cut.to_csv(csv_path, index=False)
+
+    return df_combined
 
