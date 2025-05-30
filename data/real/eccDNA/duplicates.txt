@@ -1,0 +1,57 @@
+ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/CIRCexplorer2/ /data/benchmarking/data/real/eccDNA/filter_split/CIRC
+explorer2/ use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/CIRCexplorer2/ /data/benchmarking/data/real/eccDNA/filter_duplicates
+/CIRCexplorer2/ use_split_read=False remove_duplicates=True
+17266 duplicates removed from ATAC-seq.CIRCexplorer2.bed
+11557 duplicates removed from Circle-Seq.CIRCexplorer2.bed
+Total duplicates removed from all files: 28823
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/CIRCexplorer2/ /data/benchmarking/data/real/eccDNA/filter/CIRCexplor
+er2/ use_split_read=True remove_duplicates=True
+4611 duplicates removed from ATAC-seq.CIRCexplorer2.bed
+1901 duplicates removed from Circle-Seq.CIRCexplorer2.bed
+Total duplicates removed from all files: 6512
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle-Map/ /data/benchmarking/data/real/eccDNA/filter_split/Circle-
+Map/ use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle-Map/ /data/benchmarking/data/real/eccDNA/filter_duplicates/Ci
+rcle-Map/ use_split_read=False remove_duplicates=True
+14902 duplicates removed from ATAC-seq.Circle-Map.bed
+2286 duplicates removed from Circle-Seq.Circle-Map.bed
+Total duplicates removed from all files: 17188
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle-Map/ /data/benchmarking/data/real/eccDNA/filter/Circle-Map/ u
+se_split_read=True remove_duplicates=True
+913 duplicates removed from ATAC-seq.Circle-Map.bed
+357 duplicates removed from Circle-Seq.Circle-Map.bed
+Total duplicates removed from all files: 1270
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle_finder/ /data/benchmarking/data/real/eccDNA/filter_split/Circ
+le_finder split_read_col=4 use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle_finder/ /data/benchmarking/data/real/eccDNA/filter_duplicates/Circle_finder split_read_col=4 use_split_read=False remove_duplicates=True
+5104 duplicates removed from ATAC-seq.Circle_finder.bed
+6606 duplicates removed from Circle-Seq.Circle_finder.bed
+Total duplicates removed from all files: 11710
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/Circle_finder/ /data/benchmarking/data/real/eccDNA/filter/Circle_fin
+der split_read_col=4 use_split_read=True remove_duplicates=True
+1291 duplicates removed from ATAC-seq.Circle_finder.bed
+380 duplicates removed from Circle-Seq.Circle_finder.bed
+Total duplicates removed from all files: 1671
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-bwa/ /data/benchmarking/data/real/eccDNA/filter_split/ecc
+_finder-bwa split_read_col=4 use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-bwa/ /data/benchmarking/data/real/eccDNA/filter_duplicates/ecc_finder-bwa split_read_col=4 use_split_read=False remove_duplicates=True
+0 duplicates removed from ATAC-seq.ecc_finder-bwa.bed
+0 duplicates removed from Circle-Seq.ecc_finder-bwa.bed
+Total duplicates removed from all files: 0
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-bwa/ /data/benchmarking/data/real/eccDNA/filter/ecc_finde
+r-bwa split_read_col=4 use_split_read=True remove_duplicates=True
+0 duplicates removed from ATAC-seq.ecc_finder-bwa.bed
+0 duplicates removed from Circle-Seq.ecc_finder-bwa.bed
+Total duplicates removed from all files: 0
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-minimap2/ /data/benchmarking/data/real/eccDNA/filter_spli
+t/ecc_finder-minimap2 split_read_col=4 use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-minimap2/ /data/benchmarking/data/real/eccDNA/filter_duplicates/ecc_finder-minimap2 split_read_col=4 use_split_read=False remove_duplicates=True
+0 duplicates removed from ATAC-seq.ecc_finder-minimap2.bed
+0 duplicates removed from Circle-Seq.ecc_finder-minimap2.bed
+Total duplicates removed from all files: 0
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/eccDNA/unfilter/ecc_finder-minimap2/ /data/benchmarking/data/real/eccDNA/filter/ecc_
+finder-minimap2 split_read_col=4 use_split_read=True remove_duplicates=True
+0 duplicates removed from ATAC-seq.ecc_finder-minimap2.bed
+0 duplicates removed from Circle-Seq.ecc_finder-minimap2.bed
+Total duplicates removed from all files: 0

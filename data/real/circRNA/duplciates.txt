@@ -1,0 +1,58 @@
+python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRCexplorer2 /data/benchmarking/data/real/circRNA/filter_split/CIR
+Cexplorer2 remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRCexplorer2 /data/benchmarking/data/real/circRNA/filter_duplicates/CIRCexplorer2 use_split_read=False remove_duplicates=True
+794 duplicates removed from CNT.CIRCexplorer2.bed
+5529 duplicates removed from RNASE.CIRCexplorer2.bed
+Total duplicates removed from all files: 6323
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRCexplorer2 /data/benchmarking/data/real/circRNA/filter/CIRCexplo
+rer2 use_split_read=True remove_duplicates=True
+262 duplicates removed from CNT.CIRCexplorer2.bed
+1034 duplicates removed from RNASE.CIRCexplorer2.bed
+Total duplicates removed from all files: 1296
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/circRNA_finder/ /data/benchmarking/data/real/circRNA/filter_split/c
+ircRNA_finder/ remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/circRNA_finder/ /data/benchmarking/data/real/circRNA/filter_duplica
+tes/circRNA_finder use_split_read=False remove_duplicates=True
+1437 duplicates removed from CNT.circRNA_finder.bed
+16141 duplicates removed from RNASE.circRNA_finder.bed
+Total duplicates removed from all files: 17578
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/circRNA_finder/ /data/benchmarking/data/real/circRNA/filter/circRNA
+_finder use_split_read=True remove_duplicates=True
+413 duplicates removed from CNT.circRNA_finder.bed
+2151 duplicates removed from RNASE.circRNA_finder.bed
+Total duplicates removed from all files: 2564
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRIquant/ /data/benchmarking/data/real/circRNA/filter/CIRIquant us
+e_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRIquant/ /data/benchmarking/data/real/circRNA/filter_duplicates/C
+IRIquant use_split_read=False remove_duplicates=True
+1747 duplicates removed from CNT.CIRIquant.bed
+6721 duplicates removed from RNASE.CIRIquant.bed
+Total duplicates removed from all files: 8468
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/CIRIquant/ /data/benchmarking/data/real/circRNA/filter/CIRIquant us
+e_split_read=True remove_duplicates=True
+704 duplicates removed from CNT.CIRIquant.bed
+1420 duplicates removed from RNASE.CIRIquant.bed
+Total duplicates removed from all files: 2124
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/find_circ/ /data/benchmarking/data/real/circRNA/filter_split/find_c
+irc use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/find_circ/ /data/benchmarking/data/real/circRNA/filter_duplicates/f
+ind_circ use_split_read=False remove_duplicates=True
+2884 duplicates removed from CNT.find_circ.bed
+9289 duplicates removed from RNASE.find_circ.bed
+Total duplicates removed from all files: 12173
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/find_circ/ /data/benchmarking/data/real/circRNA/filter/find_circ us
+e_split_read=True remove_duplicates=True
+1638 duplicates removed from CNT.find_circ.bed
+1981 duplicates removed from RNASE.find_circ.bed
+Total duplicates removed from all files: 3619
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/segemehl/ /data/benchmarking/data/real/circRNA/filter_split/segemeh
+l use_split_read=True remove_duplicates=False
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/segemehl/ /data/benchmarking/data/real/circRNA/filter_duplicates/segemehl use_split_read=False remove_duplicates=True
+9423 duplicates removed from CNT.segemehl.bed
+31856 duplicates removed from RNASE.segemehl.bed
+Total duplicates removed from all files: 41279
+(base) neuroim@neuroim:/data/benchmarking/functions/filter_functions$ python filter_circles.py /data/benchmarking/data/real/circRNA/unfilter/segemehl/ /data/benchmarking/data/real/circRNA/filter/segemehl use_
+split_read=True remove_duplicates=True
+2982 duplicates removed from CNT.segemehl.bed
+11254 duplicates removed from RNASE.segemehl.bed
+Total duplicates removed from all files: 14236
