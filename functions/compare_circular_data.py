@@ -10,6 +10,7 @@ def compare_bed_files(file1, file2, threshold=20):
     Parameters:
         file1 (str): Path to the first bed file.
         file2 (str): Path to the second bed file.
+        threshold (int): Maximum allowed distance between start and end positions (default is 20).
 
     Returns:
         list: List of common circles.
@@ -33,7 +34,7 @@ def are_circles_equal(circle1, circle2, threshold=20):
     Parameters:
         circle1 (tuple): Tuple representing the first circle.
         circle2 (tuple): Tuple representing the second circle.
-        threshold (int): Maximum allowed distance between start and end positions.
+        threshold (int): Maximum allowed distance between start and end positions (default is 20).
 
     Returns:
         bool: True if the circles overlap within the threshold, False otherwise.
@@ -177,7 +178,7 @@ def analyze_circular_data(circular_dir, circular_bed, output_dir, tools, coverag
         output_dir (str): Directory where results and statistics will be saved.
         tools (list of str): List of tool names to analyze.
         coverages (list of int): List of coverage levels to evaluate.
-        threshold (int, optional): Max distance to consider circles equivalent (default is 20).
+        threshold (int, optional): Maximum allowed distance between start and end positions (default is 20).
 
     Returns:
         None

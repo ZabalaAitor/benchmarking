@@ -12,6 +12,9 @@ def plot_circular_detection(csv_path, title, save_directory=None, circle_type='e
         title (str): Title for the plot.
         save_directory (str, optional): Directory where the plot should be saved. If not provided, the plot is not saved.
         circle_type (str): Circle type.
+    
+    Returns:
+        None
     """
     # Import CSV file
     df = pd.read_csv(csv_path)

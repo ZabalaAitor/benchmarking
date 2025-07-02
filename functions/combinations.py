@@ -245,6 +245,17 @@ eccDNA_tool_abbreviations_r = {
 combination = ['intersect', 'union', 'rosette']
 
 def process_eccDNA_filtering(filtering, circular_bed, tools):
+    """
+    Process eccDNA filtering by analyzing circular RNA data and generating combinations.
+
+    Parameters:
+        filtering (str): Filtering method to apply (e.g., 'unfilter', 'filter-split', 'filter-duplicates', 'filter').
+        circular_bed (str): Path to the known circular BED file (ground truth).
+        tools (list of str): List of tool names to analyze.
+
+    Returns:
+        None
+    """
     # Define paths
     filtering_base_dir = f'data/insilico/eccDNA/{filtering}'
     output_base_dir = f'results/eccDNA/insilico/{filtering}'
@@ -332,6 +343,17 @@ circRNA_tool_abbreviations_r = {
 }
 
 def process_circRNA_filtering(filtering, circular_bed, tools):
+    """
+    Process circRNA filtering by analyzing circular RNA data and generating combinations.
+
+    Parameters:
+        filtering (str): Filtering method to apply (e.g., 'unfilter', 'filter-split', 'filter-duplicates', 'filter').
+        circular_bed (str): Path to the known circular BED file (ground truth).
+        tools (list of str): List of tool names to analyze.
+
+    Returns:
+        None
+    """
     # Define paths
     filtering_base_dir = f'data/insilico/circRNA/{filtering}'
     output_base_dir = f'results/circRNA/insilico/{filtering}'
@@ -403,7 +425,7 @@ def calculate_statistics(circular_dir, circular_bed, output_dir, name):
         circular_dir (str): Directory containing circular detection results for each tool.
         circular_bed (str): Path to the known circular BED file (ground truth).
         output_dir (str): Path to the directory where output files will be stored.
-
+        name (str): Name to use for the output files.
     Return:
         None.
     """
@@ -537,7 +559,7 @@ def generate_combination_stats(union_path, rosette_path, intersect_path, output_
                 index=False
             )
 
-        # After writing raw metrics, read them back for further calculations
+    # After writing raw metrics, read them back for further calculations
     df_common_circs = pd.read_excel(output_path, sheet_name='Common Circles')
     df_FP = pd.read_excel(output_path, sheet_name='False Positives')
     df_FN = pd.read_excel(output_path, sheet_name='False Negatives')
@@ -602,6 +624,24 @@ def generate_combination_stats(union_path, rosette_path, intersect_path, output_
 
 
 def process_filtering(circular_bed, filter_name, combination, tools, tools_abbreviations, tool_abbreviations_r, real_combinations, ros_combinations_mapping, filtering_base_dir, output_base_dir):
+    """
+    Process filtering by analyzing tool results, computing statistics, and generating combination reports.
+
+    Parameters:
+        circular_bed (str): Path to the ground truth BED file containing known circular elements.
+        filter_name (str): Name of the filtering method to apply (e.g., 'unfilter', 'filter-split', 'filter-duplicates', 'filter').
+        combination (list of str): Types of combination operations to evaluate (e.g., ['intersect', 'union', 'rosette']).
+        tools (list of str): List of tool names whose outputs will be analyzed.
+        tools_abbreviations (dict): Mapping of tool names to abbreviations for labeling outputs.
+        tool_abbreviations_r (dict): Tool abbreviation mapping used specifically for rosette processing.
+        real_combinations (list): List of actual tool combinations to include in the final stats.
+        ros_combinations_mapping (dict): Mapping of rosette combinations to their corresponding tool sets.
+        filtering_base_dir (str): Base directory containing filtered results by tool.
+        output_base_dir (str): Base directory where output statistics and reports will be saved.
+
+    Returns:
+        None
+    """
     filtering_base_dir = filtering_base_dir + filter_name
     output_base_dir = output_base_dir + filter_name
     # Analyze circular combinations
@@ -777,6 +817,17 @@ def compare_combinations(base_path):
 
 # Function to merge files (Circle-Seq or any other type specified)
 def merge_files(directories, data, file_type="Circle-Seq"):
+    """
+    Merge circle detection files of a specific type across directories into a single BED file.
+
+    Parameters:
+        directories (list): List of directories to search for BED files.
+        data (str): Identifier for the dataset (used in output path).
+        file_type (str): Prefix of files to merge (default is "Circle-Seq").
+
+    Returns:
+        None
+    """
     # Create a list to store dataframes
     file_dfs = []
 
@@ -816,11 +867,35 @@ def merge_files(directories, data, file_type="Circle-Seq"):
         print(f"No valid {file_type} files to merge.")
 
 def save_bed_files(circles_df, output_dir, filename):
+    """
+    Save circles DataFrame to a CSV file (can be adjusted to real BED format if needed).
+
+    Parameters:
+        circles_df (DataFrame): DataFrame containing the circle information.
+        output_dir (str): Path to the directory where file should be saved.
+        filename (str): Name of the output file.
+
+    Returns:
+        None
+    """
     # Assuming circles_df is a DataFrame, extract necessary columns for BED format
     os.makedirs(output_dir, exist_ok=True)
     circles_df.to_csv(output_dir + '/' + filename, index=False, sep=',')
 
 def analyze_and_save_circles(main_matrix_path, extra_matrix_path, ros_combinations_mapping, eccDNA_tools_abbreviations, output_base):
+    """
+    Analyze circle detection overlaps across tools and save categorized results.
+
+    Parameters:
+        main_matrix_path (str): Path to the binary matrix with tool detections.
+        extra_matrix_path (str): Path to additional circle info to merge with categories.
+        ros_combinations_mapping (dict): Mapping of rosette comparisons.
+        eccDNA_tools_abbreviations (dict): Tool name to abbreviation mapping.
+        output_base (str): Base path to save output categorized results.
+
+    Returns:
+        None
+    """
     # Load both matrices
     df_main = pd.read_csv(main_matrix_path)
     df_main.rename(columns={"Circles": "Circle"}, inplace=True)

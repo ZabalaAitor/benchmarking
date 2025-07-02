@@ -135,6 +135,19 @@ def process_circle_matrix(matrix_file, bam_file, output_file, use_chr_prefix=Fal
 
 
 def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
+    """
+    Analyzes circle detection differences across tools based on read counts and statistics.
+
+    Parameters:
+        matrix_dir (str): Path to the CSV file containing circle presence matrix.
+        matrix_reads (str): Path to the CSV file containing reads and differential CJ statistics.
+        tools (list of str): List of tool names to analyze.
+        output_dir (str): Directory to save summary CSV and plots.
+        group (str): Group identifier used for naming output files.
+
+    Returns:
+        None
+    """
     # Define file paths
     matrix_path = os.path.join(matrix_dir)
     matrix_with_reads_path = os.path.join(matrix_reads)
@@ -255,6 +268,34 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
         print("Not enough groups to perform Kruskal-Wallis test.")
 
 def circle_diff_real(matrix_dir, tools, filtering_methods, data, n_threshold=9, alpha=0.05):
+    """
+    Perform comparative analysis of detected circular DNA/RNA across tools and filtering strategies.
+
+    This function loads detection matrices and associated CJ Read counts for various combinations of 
+    tools and filtering methods, computes summary statistics, categorizes circles by CJ Read threshold, 
+    generates comparative boxplots, and performs non-parametric statistical tests (Kruskal-Wallis and Dunn's test) 
+    to evaluate differences in ΔCJ (difference in circular junction reads) distributions.
+
+    Summary statistics include the number and percentage of high-confidence circles (above threshold), 
+    median/mean ΔCJ values, and the proportion of statistically significant changes.
+
+    Parameters:
+        matrix_dir (str): Path to the base directory containing 'matrix.csv' and 'matrix_with_reads.csv' files 
+                        for each filtering method and dataset.
+        tools (list): List of tool names to include in the analysis (e.g., ['Circle-Map', 'CIRCexplorer2']).
+        filtering_methods (list): List of filtering method names (e.g., ['filter', 'unfilter']).
+        data (str): Name of the dataset (used in file paths and output plot titles).
+        n_threshold (int, optional): Threshold for CJ Read count to define high-confidence circles (default is 9).
+        alpha (float, optional): Significance level for p-value thresholds (default is 0.05).
+
+    Returns:
+        None
+
+    Outputs:
+        CSV file with summary statistics for each tool and filtering method.
+        PNG boxplot visualizing ΔCJ distributions across tools and filters.
+        Excel file containing Kruskal-Wallis and Dunn's test results for ΔCJ comparisons.
+    """
 
     plot_data = []
     kruskal_results = []
@@ -420,6 +461,16 @@ def capitalize_xticks(ax):
     ax.set_xticklabels(labels)
 
 def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_methods, combining_method):
+    """
+    Analyze ΔCJ (difference in circular junction reads) across combinations and compare against 'rosette'.
+
+    Parameters:
+        circle: Type of circle (e.g., 'circDNA')
+        method: Method name (e.g., 'ciriquant')
+        ros_combinations_mapping: Mapping of sample keys to group metadata
+        filtering_methods: List of filtering methods (e.g., ['bwa', 'minimap2'])
+        combining_method: List of combination strategies (e.g., ['union', 'rosette'])
+    """
     data = []
     differences_data = []
     rosette_diff_cj = {}
@@ -654,11 +705,11 @@ def compute_ratios(df, method_name):
     Compute various ratios based on combination methods for a given dataset.
 
     Parameters:
-    - df (pd.DataFrame): Input DataFrame with combinations and counts
-    - method_name (str): Name of the method (used for labeling)
+        df (pd.DataFrame): Input DataFrame with combinations and counts
+        method_name (str): Name of the method (used for labeling)
 
     Returns:
-    - pd.DataFrame: DataFrame with computed ratios and method label
+        pd.DataFrame: DataFrame with computed ratios and method label
     """
     df['Ratio_Union_Rosette'] = float('nan')
     df['Ratio_Union_Intersect'] = float('nan')
@@ -701,10 +752,10 @@ def process_and_plot_ratios(paths):
     Saves individual plots and combined_ratios.csv in each method's folder.
 
     Parameters:
-    - paths (list of tuples): List of (csv_path, method_name) pairs
+        paths (list of tuples): List of (csv_path, method_name) pairs
 
     Returns:
-    - pd.DataFrame: Combined DataFrame with ratio metrics for all methods
+        pd.DataFrame: Combined DataFrame with ratio metrics for all methods
     """
     df_combined = pd.DataFrame()
 

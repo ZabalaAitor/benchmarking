@@ -63,53 +63,6 @@ def annotate_repeat_elements(repeats_file, bed_files, output_dir, tools, true_or
         
         # Save the annotated bed file
         bed_df.to_csv(output_path, sep='\t', index=False, header=False)
-       
-# def annotate_repeat_elements_real(repeats_file, bed_files, output_dir, tools):
-#     """
-#     Annotates BED files with repeat element information and saves them.
-
-#     Parameters:
-#         repeats_file (str): Path to repeat elements data.
-#         bed_files (list): List of BED file paths to annotate.
-#         output_dir (str): Directory to save annotated files.
-#         tools (list): List of tool names for output filenames.
-
-#     This function annotates BED files with repeat types and saves them to the specified directory.
-#     """
-#     # Read the repeats file
-#     repeats_df = pd.read_csv(repeats_file, sep='\t', header=None, names=['chr', 'start', 'end', 'type'])
-    
-#     # Standardize chromosome notation in repeats_df (remove 'chr' if present)
-#     repeats_df['chr'] = repeats_df['chr'].astype(str).str.replace('chr', '')
-
-#     # Function to find the repeat type in a specific coordinate
-#     def find_repeat_type(chr_, pos, repeats_df):
-#         overlaps = repeats_df[(repeats_df['chr'] == str(chr_)) & 
-#                               (repeats_df['end'] >= pos) & 
-#                               (repeats_df['start'] <= pos)]
-#         return ' '.join(overlaps['type'].unique())
-
-#     # Loop over each bed file and corresponding tool
-#     for bed_file, tool_name in zip(bed_files, tools):
-#         # Read the bed file
-#         bed_df = pd.read_csv(bed_file, sep='\t', header=None, names=['chr', 'start', 'end', 'score'])
-        
-#         # Convert chromosome column to string for consistency
-#         bed_df['chr'] = bed_df['chr'].astype(str).str.replace('chr', '')
-
-#         # Annotate the bed file with repeat types
-#         bed_df['repeat_start'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['start'], repeats_df), axis=1)
-#         bed_df['repeat_end'] = bed_df.apply(lambda row: find_repeat_type(row['chr'], row['end'], repeats_df), axis=1)
-
-#         # Set output file name based on the tool name from the provided list
-#         output_file_name = f"{tool_name}_repeat_elements.bed"
-        
-#         # Create the output path with the tool name included
-#         output_path = os.path.join(output_dir, output_file_name)
-#         os.makedirs(output_dir, exist_ok=True)
-        
-#         # Save the annotated bed file
-#         bed_df.to_csv(output_path, sep='\t', index=False, header=False)
 
 def process_repeat_elements(annotated_files, tools, output_csv):
     """

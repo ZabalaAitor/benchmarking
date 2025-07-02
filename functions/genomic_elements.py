@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from functions.compare_circular_data import calculate_metrics
 
-gene_file = "/data/database/genomes/GRCh38/genomic_genes.gtf"
-exon_file = "/data/database/genomes/GRCh38/exon_genes.gtf"
-other_file = "/data/database/genomes/GRCh38/genomic_annotation.gtf"
+gene_file = "genomic_elements/genomic_genes.gtf"
+exon_file = "genomic_elements/exon_genes.gtf"
+other_file = "genomic_elements/genomic_annotation.gtf"
 
 def annotate_genomic_elements(bed_file, output_dir, gene_file, exon_file, other_file):
     """
@@ -116,6 +116,7 @@ def annotate_bed_files_genomic_elements(bed_files, output_dir, tools, true_or_fa
         output_dir (str): Directory to save annotated files.
         tools (list): List of tool names used to determine output file names.
         true_or_false (str): Label for the data type ('truepositives', 'falsenegatives', 'falsepositives').
+        
     Returns:
         None
     """ 

@@ -3,8 +3,16 @@ import pandas as pd
 
 def load_stats(folder, method, benchmarking_base_path):
     """
-    Loads precision, recall, fscore, truepositives, falsenegatives, and falsepositives CSVs
-    based on the folder and method (tool) being processed.
+    Loads precision, recall, fscore, true positives, false negatives, and false positives CSV files
+    for a given folder and method (tool).
+
+    Parameters:
+        folder (str): Name of the folder containing statistics files.
+        method (str): Tool or method name.
+        benchmarking_base_path (str): Base path to the benchmarking data.
+
+    Returns:
+        tuple: DataFrames in the order (true_positives, false_negatives, false_positives, precision, recall, fscore).
     """
     
     stats_path = os.path.join(benchmarking_base_path, folder, 'statistics')
@@ -23,7 +31,19 @@ def load_stats(folder, method, benchmarking_base_path):
 
 def process_and_save_metrics(base_path, benchmarking_base_path, tools, cov_values, folders, output_path='analysis_results.xlsx'):
     """
-    Process benchmarking data and save the results to an Excel file with multiple sheets.
+    Processes benchmarking data for multiple tools and coverage values, then saves
+    aggregated results to an Excel file with separate sheets.
+
+    Parameters:
+        base_path (str): Base directory containing BED files.
+        benchmarking_base_path (str): Base directory containing statistics CSVs.
+        tools (list of str): List of tool names to process.
+        cov_values (list): List of coverage values to process.
+        folders (list of str): List of folder names to iterate through.
+        output_path (str, optional): File path to save the Excel output. Defaults to 'analysis_results.xlsx'.
+
+    Returns:
+        None
     """
     counts_data = []
     truepositives_data = []

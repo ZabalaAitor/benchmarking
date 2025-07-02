@@ -82,6 +82,18 @@ def matrix_real(circular_dir, tools, sample, output_dir):
         writer.writerows(matrix)  # Write all matrix rows
 
 def create_circle_presence_matrix(circular_bed, tools, circular_output, circular_type):
+    """"
+    Create a matrix indicating the presence of circles across different filtering types and tools.
+
+    Parameters:
+        circular_bed (str): Path to the simulated circles BED file.
+        tools (list): List of tool names.
+        circular_output (str): Output CSV file path.
+        circular_type (str): Type of circle, used to build paths.
+
+    Returns:
+        None
+    """
     def load_bed(file_path):
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             return set()
