@@ -29,3 +29,8 @@ After downloading, extract the contents and organize them as follows:
 - genomic_elements/ → must contain the GTF files and other genome annotation data required for genomic annotation analysis.
 
 These three folders (data/, repeatmasker/ and genomic_elements/) are essential for running the pipeline.
+
+## 📊 Results
+
+The results of the benchmarking analysis are available at:  
+🔗 [https://zenodo.org/records/15783795](https://zenodo.org/records/15783795)
