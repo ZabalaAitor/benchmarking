@@ -30,7 +30,7 @@ After downloading, extract the contents and organize them as follows:
 
 These three folders (data/, repeatmasker/ and genomic_elements/) are essential for running the pipeline.
 
-## 📊 Results
+## 📊 Outputs
 
-The results of the benchmarking analysis are available at:  
+The ouputs of the benchmarking analysis are available at:  
 🔗 [https://zenodo.org/records/15783795](https://zenodo.org/records/15783795)
