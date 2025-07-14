@@ -1,6 +1,6 @@
-# Comparative analysis of circRNA and eccDNA tools shows increased accuracy of tool combination
+# Comparative analysis of eccDNA and circRNA tools shows increased accuracy of tool combination
 
-This repository contains the code and notebooks used in the study **"Comparative analysis of circRNA and eccDNA tools shows increased accuracy of tool combination"**.
+This repository contains the code and notebooks used in the study **"Comparative analysis of eccDNA and circRNA tools shows increased accuracy of tool combination"**.
 
 ## 📁 Repository Structure
 
@@ -12,7 +12,7 @@ This repository contains the code and notebooks used in the study **"Comparative
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/circular-tools-benchmarking.git
+git clone https://github.com/ZabalaAitor/benchmarking
 cd benchmarking
 ```
 
