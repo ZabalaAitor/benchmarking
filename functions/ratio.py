@@ -19,6 +19,8 @@ def process_circle_matrix(matrix_file, bam_file, output_file, use_chr_prefix=Fal
         bam_file (str): Path to the BAM file.
         output_file (str): Path to save the output CSV.
         use_chr_prefix (bool): Whether to add 'chr' prefix to chromosome names. Default is False.
+        n_offset (int): Offset for read counting around circle junctions. Default is 1.
+        verbose (bool): If True, prints detailed information about reads. Default is False.
 
     Returns:
         None
