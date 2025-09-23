@@ -253,10 +253,18 @@ def process_circle_matrix_mappability(matrix_file, bam_file, output_file,
                         print(f"Skipping mappability for {circle}: interval too short or missing values")
 
             # --- Binomial test using adjusted probability ---
-            min_reads_CJ = min(CJ1_n, CJ2_n)
+            
             if CJ_reads > 0:
-                p_diff_cj = binom.cdf(min_reads_CJ, CJ_reads, p=p_L) * 2
-                p_diff_cj = min(p_diff_cj, 1.0)
+                k = CJ1_n
+                n = CJ_reads
+                # Probabilidad esperada según mappability relativa
+                p = p_L
+                
+                # Test de dos colas
+                p_lower = binom.cdf(k, n, p)       # P(X <= k)
+                p_upper = binom.sf(k-1, n, p)      # P(X >= k)
+                p_val = 2 * min(p_lower, p_upper)  
+                p_diff_cj = min(p_val, 1.0)
             else:
                 p_diff_cj = 1
 
