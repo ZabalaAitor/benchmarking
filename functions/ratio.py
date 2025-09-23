@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import pysam
+import pyBigWig
 from scipy.stats import binom, kruskal, median_abs_deviation
 from statsmodels.stats.multitest import multipletests as multi
 from matplotlib import pyplot as plt
@@ -133,6 +134,164 @@ def process_circle_matrix(matrix_file, bam_file, output_file, use_chr_prefix=Fal
     output_df.insert(p_diff_index + 1, 'p diff CJ*', adjusted_p_CJ)
 
     # Save to CSV
+    output_df.to_csv(output_file, index=False)
+
+def process_circle_matrix_mappability(matrix_file, bam_file, output_file, 
+                                      mappability_bw=None, map_window=30,
+                                      use_chr_prefix=False, N_offset=1, verbose=False):
+    """
+    Processes a circle matrix and extracts read counts from a BAM file,
+    adjusting ∆CJ by local sequence mappability.
+
+    Parameters:
+        matrix_file (str): Path to the input CSV containing circle regions.
+        bam_file (str): Path to the BAM file.
+        output_file (str): Path to save the output CSV.
+        mappability_bw (str): Path to a BigWig file with per-base mappability values.
+                              If None, the test will assume p=0.5.
+        map_window (int): Number of bases inside the circle to average for mappability.
+        use_chr_prefix (bool): Whether to add 'chr' prefix to chromosome names. Default is False.
+        N_offset (int): Offset for read counting around circle junctions. Default is 1.
+        verbose (bool): If True, prints detailed information. Default is False.
+
+    Returns:
+        None
+    """
+
+    # --- Helper function to safely fetch BigWig values ---
+    def safe_bw_values(bw, chrom, start, end, chrom_len):
+        # Determine proper chromosome name for BigWig
+        bw_chrom_prefix = any(c.startswith("chr") for c in bw.chroms())
+        bw_chrom = chrom
+        if bw_chrom_prefix and not chrom.startswith("chr"):
+            bw_chrom = 'chr' + chrom
+
+        if bw_chrom not in bw.chroms():
+            if verbose:
+                print(f"Chromosome {chrom} not found in BigWig.")
+            return None
+
+        start = max(0, start)
+        end = min(end, chrom_len - 1)
+        if end <= start:
+            if verbose:
+                print(f"Invalid interval {chrom}:{start}-{end} for BigWig.")
+            return None
+
+        return bw.values(bw_chrom, start, end, numpy=True)
+
+    # Open BAM file
+    bamobject = pysam.AlignmentFile(bam_file, "rb")
+
+    # Open mappability BigWig if provided
+    bw = None
+    chrom_dict = None
+    if mappability_bw:
+        bw = pyBigWig.open(mappability_bw)
+        chrom_dict = bw.chroms()
+        if not use_chr_prefix:
+            chrom_dict = {k.replace("chr", ""): v for k, v in chrom_dict.items()}
+
+    # Read the CSV
+    df = pd.read_csv(matrix_file)
+    results = []
+
+    for index, row in df.iterrows():
+        circle = row["Circles"]
+        try:
+            chrom, coords = circle.split(":")
+            start, end = map(int, coords.split("-"))
+            # Swap if start > end
+            if start > end:
+                start, end = end, start
+                if verbose:
+                    print(f"Swapped start/end for {circle} to {start}-{end}")
+        except ValueError:
+            print(f"Skipping invalid circle format: {circle}")
+            continue
+
+        if use_chr_prefix and not chrom.startswith('chr'):
+            chrom = 'chr' + chrom
+
+        try:
+            tools_detected = row.iloc[1:].sum()
+
+            # Fetch CJ1 and CJ2 supporting reads
+            CJ1 = {read.query_name for read in bamobject.fetch(chrom, start - N_offset, start + N_offset)}
+            CJ2 = {read.query_name for read in bamobject.fetch(chrom, end - N_offset, end + N_offset)}
+            CJ1_n, CJ2_n = len(CJ1), len(CJ2)
+
+            CJ_unique_reads = len(CJ1 | CJ2)
+            CJ_reads = CJ1_n + CJ2_n
+            total_reads = len({read.query_name for read in bamobject.fetch(chrom, start - N_offset, end + N_offset)})
+
+            ratio_CJ1 = CJ1_n / CJ_reads if CJ_reads > 0 else 0
+            ratio_CJ2 = CJ2_n / CJ_reads if CJ_reads > 0 else 0
+            max_CJ, min_CJ = max(ratio_CJ1, ratio_CJ2), min(ratio_CJ1, ratio_CJ2)
+            diff_CJ = max_CJ - min_CJ
+
+            # --- Compute mappability-adjusted probability ---
+            p_L = 0.5  # default if mappability not available
+            M_L, M_R = None, None
+            if bw and chrom in chrom_dict:
+                chrom_len = chrom_dict[chrom]
+
+                # Left side (inside the circle after start)
+                vals_L = safe_bw_values(bw, chrom, start, start + map_window, chrom_len)
+                # Right side (inside the circle before end)
+                vals_R = safe_bw_values(bw, chrom, end - map_window, end, chrom_len)
+
+                if vals_L is not None and vals_R is not None:
+                    M_L = float(pd.Series(vals_L).mean(skipna=True))
+                    M_R = float(pd.Series(vals_R).mean(skipna=True))
+                    if (M_L + M_R) > 0:
+                        p_L = M_L / (M_L + M_R)
+                    if verbose:
+                        print(f"Circle {circle}: M_L={M_L:.3f}, M_R={M_R:.3f}, p_L={p_L:.3f}")
+                else:
+                    if verbose:
+                        print(f"Skipping mappability for {circle}: interval too short or missing values")
+
+            # --- Binomial test using adjusted probability ---
+            min_reads_CJ = min(CJ1_n, CJ2_n)
+            if CJ_reads > 0:
+                p_diff_cj = binom.cdf(min_reads_CJ, CJ_reads, p=p_L) * 2
+                p_diff_cj = min(p_diff_cj, 1.0)
+            else:
+                p_diff_cj = 1
+
+            ratio = CJ_unique_reads / total_reads if total_reads > 0 else 0
+            circle_length = end - start + 1
+
+            results.append([
+                circle, circle_length, tools_detected,
+                CJ1_n, CJ2_n, CJ_unique_reads, CJ_reads,
+                min_CJ, max_CJ, diff_CJ, p_diff_cj,
+                total_reads, ratio, M_L, M_R, p_L
+            ])
+
+        except ValueError as e:
+            print(f"Skipping invalid chromosome/region {circle}: {e}")
+            continue
+
+    bamobject.close()
+    if bw:
+        bw.close()
+
+    # Save results
+    output_df = pd.DataFrame(results, columns=[
+        "Circle", "Length", "Tools",
+        "CJ1 Reads", "CJ2 Reads", "CJ Unique Reads", "CJ Reads",
+        "min CJ", "max CJ", "diff CJ", "p diff CJ",
+        "Total Reads", "Ratio",
+        "Mappability L", "Mappability R", "p_L"
+    ])
+
+    # FDR correction
+    adjusted_p_CJ = multi(output_df['p diff CJ'].values, method='fdr_bh')[1]
+    p_diff_index = output_df.columns.get_loc('p diff CJ')
+    output_df.insert(p_diff_index + 1, 'p diff CJ*', adjusted_p_CJ)
+
     output_df.to_csv(output_file, index=False)
 
 
