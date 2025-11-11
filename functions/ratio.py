@@ -103,8 +103,8 @@ def process_circle_matrix(matrix_file, bam_file, output_file,
             MAPQ_CJ2 = [r.mapping_quality for r in CJ2_reads]
 
             # --- Weighted counts based on MAPQ ---
-            weights_CJ1 = [0 if q == 0 else min(1, q / 60) for q in MAPQ_CJ1]
-            weights_CJ2 = [0 if q == 0 else min(1, q / 60) for q in MAPQ_CJ2]
+            weights_CJ1 = [1 - 10**(- (q) / 10) for q in MAPQ_CJ1]
+            weights_CJ2 = [1 - 10**(- (q) / 10) for q in MAPQ_CJ2]
 
             kL_w = sum(weights_CJ1)
             kR_w = sum(weights_CJ2)
@@ -255,20 +255,34 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
         if n_tool == 0:
             summary_stats.append({
                 'Tool': tool,
+                'Non_Informative (Unweighted)': np.nan,
+                'Non_Informative_% (Unweighted)': np.nan,
+                'CJ_Reads_<9 (Unweighted)': np.nan,
+                'CJ_Reads_<9_% (Unweighted)': np.nan,
+                'CJ_Reads_≥9 (Unweighted)': np.nan,
                 'CJ_Reads_≥9_% (Unweighted)': np.nan,
-                'ACJ_Median_≥9 (Unweighted)': np.nan,
-                'ACJ_Mean_≥9 (Unweighted)': np.nan,
                 'ACJ_Median_<9 (Unweighted)': np.nan,
                 'ACJ_Mean_<9 (Unweighted)': np.nan,
+                'ACJ_Median_≥9 (Unweighted)': np.nan,
+                'ACJ_Mean_≥9 (Unweighted)': np.nan,
+                'p<CJ_alpha_<9_% (Unweighted)': np.nan,
+                'pFDR<CJ_alpha_<9_% (Unweighted)': np.nan,
                 'p<CJ_alpha_≥9_% (Unweighted)': np.nan,
                 'pFDR<CJ_alpha_≥9_% (Unweighted)': np.nan,
                 'p<CJ_alpha_<9_% (Unweighted)': np.nan,
                 'pFDR<CJ_alpha_<9_% (Unweighted)': np.nan,
+                'Non_Informative (Weighted)': np.nan,
+                'Non_Informative_% (Weighted)': np.nan,
+                'CJ_Reads_<9 (Weighted)': np.nan,
+                'CJ_Reads_<9_% (Weighted)': np.nan,
+                'CJ_Reads_≥9 (Weighted)': np.nan,
                 'CJ_Reads_≥9_% (Weighted)': np.nan,
-                'ACJ_Median_≥9 (Weighted)': np.nan,
-                'ACJ_Mean_≥9 (Weighted)': np.nan,
                 'ACJ_Median_<9 (Weighted)': np.nan,
                 'ACJ_Mean_<9 (Weighted)': np.nan,
+                'ACJ_Median_≥9 (Weighted)': np.nan,
+                'ACJ_Mean_≥9 (Weighted)': np.nan,
+                'p<CJ_alpha_<9_% (Weighted)': np.nan,
+                'pFDR<CJ_alpha_<9_% (Weighted)': np.nan,
                 'p<CJ_alpha_≥9_% (Weighted)': np.nan,
                 'pFDR<CJ_alpha_≥9_% (Weighted)': np.nan,
                 'p<CJ_alpha_<9_% (Weighted)': np.nan,
@@ -326,29 +340,37 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
         summary_stats.append({
             'Tool': tool,
 
-            # Unweighted dat
+            # Unweighted data
+            'Non_Informative (Unweighted)': len(filter_data_nan),
             'Non_Informative_% (Unweighted)': len(filter_data_nan) / len(tool_data),
+            'CJ_Reads_<9 (Unweighted)': len(filter_data_min),
+            'CJ_Reads_<9_% (Unweighted)': len(filter_data_min) / len(tool_data),
+            'CJ_Reads_≥9 (Unweighted)': len(filter_data_max),
             'CJ_Reads_≥9_% (Unweighted)': len(filter_data_max) / len(tool_data),
-            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
-            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
             'ACJ_Median_<9 (Unweighted)': filter_data_min['reldiff_CJ'].median() if len(filter_data_min)>0 else np.nan,
             'ACJ_Mean_<9 (Unweighted)': filter_data_min['reldiff_CJ'].mean() if len(filter_data_min)>0 else np.nan,
-            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
-            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
+            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
+            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
             'p<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha,
             'pFDR<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha_fdr,
+            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
+            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
 
             # Weighted data
+            'Non_Informative (Weighted)': len(filter_data_nan_weighted),
             'Non_Informative_% (Weighted)': len(filter_data_nan_weighted) / len(tool_data),
+            'CJ_Reads_<9 (Weighted)': len(filter_data_min_weighted),
+            'CJ_Reads_<9_% (Weighted)': len(filter_data_min_weighted) / len(tool_data),
+            'CJ_Reads_≥9 (Weighted)': len(filter_data_max_weighted),
             'CJ_Reads_≥9_% (Weighted)': len(filter_data_max_weighted) / len(tool_data),
-            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
-            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
             'ACJ_Median_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].median() if len(filter_data_min_weighted)>0 else np.nan,
             'ACJ_Mean_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].mean() if len(filter_data_min_weighted)>0 else np.nan,
-            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
-            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
+            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
+            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
             'p<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha,
             'pFDR<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha_fdr,
+            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
+            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
         })
 
     # Save summary statistics as CSV
@@ -400,9 +422,12 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
     plt.tight_layout()
 
     # Add counts on top of each box
-    group_counts = plot_df.groupby('Tool').size()
+    # Compute counts for ΔCJw
+    group_counts_weighted = plot_df.groupby("Tool")["diff_weighted"].count().to_dict()
+
+    # Add counts on top of each box
     for i, tool in enumerate(tools):
-        count = group_counts.get(tool, 0)
+        count = group_counts_weighted.get(tool, 0)
         if count > 0:
             y_text = 1.05
             ax.text(i, y_text, str(count), ha='center', va='bottom', fontsize=12)
@@ -417,19 +442,23 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
     plt.figure(figsize=(8.5, 4))
     ax = sns.boxplot(x="Tool", y="diff_weighted", data=plot_df, palette=palette)
     plt.xlabel('')
-    plt.ylabel('ΔCJw', fontsize=16)
+    plt.ylabel('ΔCJ', fontsize=16)
     plt.xticks(ticks=range(len(xtick_labels)), labels=xtick_labels, fontsize=16)
     plt.yticks(fontsize=16)
     plt.grid(axis="y", linestyle='--', linewidth=0.5, alpha=0.7)
     sns.despine()
     plt.tight_layout()
 
+    # Compute counts for ΔCJw
+    group_counts_weighted = plot_df.groupby("Tool")["diff_weighted"].count().to_dict()
+
     # Add counts on top of each box
     for i, tool in enumerate(tools):
-        count = group_counts.get(tool, 0)
+        count = group_counts_weighted.get(tool, 0)
         if count > 0:
             y_text = 1.05
             ax.text(i, y_text, str(count), ha='center', va='bottom', fontsize=12)
+
 
     # Save the plot
     save_path = os.path.join(output_dir, f'{group}_diff_cj_weighted.png')
@@ -446,6 +475,103 @@ def circle_diff(matrix_dir, matrix_reads, tools, output_dir, group):
         print(f"Kruskal-Wallis test across: H = {stat:.4f}, p = {p_val:.4e}")
     else:
         print("Not enough groups to perform Kruskal-Wallis test.")
+
+def plot_mappability_and_mapq(matrix_file, read_file, output_dir):
+    """
+    Plot violin plots of Mappability and MAPQ for True Positives, False Negatives, and False Positives per tool.
+
+    Parameters:
+        matrix_file (str): CSV file with columns
+        read_file (str): CSV with circle info
+        output_dir (str): Directory to save the plots.
+    """
+
+    # === Read data ===
+    matrix = pd.read_csv(matrix_file)
+    true_df = pd.read_csv(read_file)
+
+    # Normalize column names
+    if 'Circles' in matrix.columns:
+        matrix.rename(columns={'Circles': 'Circle'}, inplace=True)
+    elif 'Circle' not in matrix.columns:
+        matrix.rename(columns={matrix.columns[0]: 'Circle'}, inplace=True)
+
+    # Ensure numeric 0/1
+    for col in matrix.columns[1:]:
+        matrix[col] = pd.to_numeric(matrix[col], errors='coerce').fillna(0).astype(int)
+
+    tools = [c for c in matrix.columns if c not in ['Circle', 'Simulated']]
+
+    # === Colorblind-friendly palette ===
+    colorblind_palette = ['#d46014', '#ddcd3d', '#064b76ff', '#63bdf6ff', '#b54582']
+
+    # === Helper: gather data by condition ===
+    def gather_data(condition, base_df, category):
+        mapp_data = []
+        mapq_data = []
+        for tool in tools:
+            subset = matrix.query(condition(tool))
+            merged = subset.merge(base_df, on='Circle', how='inner')
+            for _, entry in merged.iterrows():
+                # Mappability
+                mapp_data.append({'Tool': tool, 'Value': entry['Mappability_L'], 'Category': category})
+                mapp_data.append({'Tool': tool, 'Value': entry['Mappability_R'], 'Category': category})
+                # MAPQ
+                mapq_data.append({'Tool': tool, 'Value': entry['MAPQ_mean_CJ1'], 'Category': category})
+                mapq_data.append({'Tool': tool, 'Value': entry['MAPQ_mean_CJ2'], 'Category': category})
+        return mapp_data, mapq_data
+
+    # === Define conditions ===
+    tp_condition = lambda tool: f"(Simulated == 1 and `{tool}` == 1)"
+    fn_condition = lambda tool: f"(Simulated == 1 and `{tool}` == 0)"
+    fp_condition = lambda tool: f"(Simulated == 0 and `{tool}` == 1)"
+
+    # === Collect data ===
+    tp_mapp, tp_mapq = gather_data(tp_condition, true_df, 'True Positive')
+    fn_mapp, fn_mapq = gather_data(fn_condition, true_df, 'False Negative')
+    fp_mapp, fp_mapq = gather_data(fp_condition, true_df, 'False Positive')
+
+    # === Combine ===
+    all_mapp = pd.DataFrame(tp_mapp + fn_mapp + fp_mapp)
+    all_mapq = pd.DataFrame(tp_mapq + fn_mapq + fp_mapq)
+
+    # === Plotting ===
+    def normalize_tool_name(tool):
+        """
+        Standardize tool names for plotting, especially ecc_finder variants.
+        """
+        # Handle ecc_finder variants
+        if 'ecc_finder' in tool:
+            return tool.replace('-', '\n')
+        return tool
+
+    def plot_violin(data, y_label, title_prefix):
+        # Normalize tool names
+        data = data.copy()
+        data['Tool'] = data['Tool'].apply(normalize_tool_name)
+
+        for category in ['True Positive', 'False Negative', 'False Positive']:
+            print("Plotting category:", category)
+            subset = data[data['Category'] == category]
+            if subset.empty:
+                continue
+
+            plt.figure(figsize=(10, 4))
+            sns.violinplot(
+                data=subset, x='Tool', y='Value',
+                inner='quartile', palette=colorblind_palette, cut=0
+            )
+            plt.ylabel(y_label, fontsize=16)
+            plt.xlabel("")
+            plt.xticks(fontsize=16)
+            plt.yticks(fontsize=16)
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/{title_prefix}_{category.replace(' ', '_')}.png", dpi=300, bbox_inches="tight")
+            plt.show()
+
+    # === Generate plots ===
+    plot_violin(all_mapp, "Mappability", "Distribution of Mappability per Tool")
+    plot_violin(all_mapq, "MAPQ Mean", "Distribution of MAPQ Mean per Tool")
 
 palette = {
     'unfilter': '#d46014',
@@ -577,28 +703,36 @@ def circle_diff_real(matrix_dir, tools, filtering_methods, data, n_threshold=9, 
             'Filtering': filtering_method,
 
             # Unweighted data
+            'Non_Informative (Unweighted)': len(filter_data_nan),
             'Non_Informative_% (Unweighted)': len(filter_data_nan) / len(tool_data),
+            'CJ_Reads_<9 (Unweighted)': len(filter_data_min),
+            'CJ_Reads_<9_% (Unweighted)': len(filter_data_min) / len(tool_data),
+            'CJ_Reads_≥9 (Unweighted)': len(filter_data_max),
             'CJ_Reads_≥9_% (Unweighted)': len(filter_data_max) / len(tool_data),
-            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
-            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
             'ACJ_Median_<9 (Unweighted)': filter_data_min['reldiff_CJ'].median() if len(filter_data_min)>0 else np.nan,
             'ACJ_Mean_<9 (Unweighted)': filter_data_min['reldiff_CJ'].mean() if len(filter_data_min)>0 else np.nan,
-            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
-            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
+            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
+            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
             'p<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha,
             'pFDR<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha_fdr,
+            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
+            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
 
             # Weighted data
+            'Non_Informative (Weighted)': len(filter_data_nan_weighted),
             'Non_Informative_% (Weighted)': len(filter_data_nan_weighted) / len(tool_data),
+            'CJ_Reads_<9 (Weighted)': len(filter_data_min_weighted),
+            'CJ_Reads_<9_% (Weighted)': len(filter_data_min_weighted) / len(tool_data),
+            'CJ_Reads_≥9 (Weighted)': len(filter_data_max_weighted),
             'CJ_Reads_≥9_% (Weighted)': len(filter_data_max_weighted) / len(tool_data),
-            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
-            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
             'ACJ_Median_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].median() if len(filter_data_min_weighted)>0 else np.nan,
             'ACJ_Mean_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].mean() if len(filter_data_min_weighted)>0 else np.nan,
-            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
-            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
+            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
+            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
             'p<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha,
             'pFDR<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha_fdr,
+            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
+            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
         })
 
         for _, row in filter_data_max.iterrows():
@@ -680,26 +814,33 @@ def circle_diff_real(matrix_dir, tools, filtering_methods, data, n_threshold=9, 
         plt.show()
 
         for filtering_method in filtering_methods:
+            df_sub = plot_df.dropna(subset=['diff CJ'])
+            df_sub = df_sub[df_sub['Filtering'] == filtering_method]
+            if not df_sub.empty:
+                groups = [df_sub[df_sub['Tool'] == tool]['diff CJ'].values for tool in tools]
+
+                # Remove empty or NaN-only groups
+                groups_clean = [g[~np.isnan(g)] for g in groups if len(g[~np.isnan(g)]) > 0]
+                # Keep only groups with >1 unique value
+                valid_groups = [g for g in groups_clean if len(np.unique(g)) > 1]
+
+                if len(valid_groups) > 1:
+                    stat, p_val = kruskal(*valid_groups)
+                    print(f"Kruskal-Wallis test for filtering method {filtering_method}: H = {stat:.4f}, p = {p_val:.4f}")
+
+        for filtering_method in filtering_methods:
             df_sub = plot_df[plot_df['Filtering'] == filtering_method]
             if not df_sub.empty:
                 groups = [df_sub[df_sub['Tool'] == tool]['diff CJ'].values for tool in tools]
                 if len(groups) > 1:
-                    stat, p_val = kruskal(*groups)
-                    kruskal_results.append({
-                        'Filtering Method': filtering_method,
-                        'Test': 'Kruskal-Wallis (Tools)',
-                        'H-statistic': stat,
-                        'p-value': p_val
-                    })
-                    print(f"Kruskal-Wallis test for filtering method {filtering_method}: H = {stat:.4f}, p = {p_val:.4f}")
-
                     dunn_result = sp.posthoc_dunn(df_sub, val_col='diff CJ', group_col='Tool', p_adjust='bonferroni')
                     dunn_results.append({
                         'Filtering Method': filtering_method,
                         'Test': 'Dunn\'s test (Tools)',
                         'results': dunn_result
                     })
-                    print(f"Dunn's test for {filtering_method}: \n{dunn_result}")
+                    print(f"  Dunn's test for {filtering_method}: \n{dunn_result}")
+
 
 
         output_dir = os.path.join(matrix_dir, data)
@@ -746,26 +887,37 @@ def circle_diff_real(matrix_dir, tools, filtering_methods, data, n_threshold=9, 
         plt.show()
 
         for filtering_method in filtering_methods:
+            df_sub = plot_df.dropna(subset=['diff_weighted'])
+            df_sub = df_sub[df_sub['Filtering'] == filtering_method]
+            if not df_sub.empty:
+                groups = [df_sub[df_sub['Tool'] == tool]['diff_weighted'].values for tool in tools]
+
+                # Remove empty or NaN-only groups
+                groups_clean = [g[~np.isnan(g)] for g in groups if len(g[~np.isnan(g)]) > 0]
+                # Keep only groups with >1 unique value
+                valid_groups = [g for g in groups_clean if len(np.unique(g)) > 1]
+
+                if len(valid_groups) > 1:
+                    stat, p_val = kruskal(*valid_groups)
+                    kruskal_results.append({
+                        'Filtering Method': filtering_method,
+                        'Test': 'Kruskal-Wallis (Tools, Weighted)',
+                        'H-statistic': stat,
+                        'p-value': p_val
+                    })
+        
+        for filtering_method in filtering_methods:
             df_sub = plot_df[plot_df['Filtering'] == filtering_method]
             if not df_sub.empty:
                 groups = [df_sub[df_sub['Tool'] == tool]['diff_weighted'].values for tool in tools]
                 if len(groups) > 1:
-                    stat, p_val = kruskal(*groups)
-                    kruskal_results.append({
-                        'Filtering Method': filtering_method,
-                        'Test': 'Kruskal-Wallis (Tools)',
-                        'H-statistic': stat,
-                        'p-value': p_val
-                    })
-                    print(f"Kruskal-Wallis test for filtering method {filtering_method}: H = {stat:.4f}, p = {p_val:.4f}")
-
                     dunn_result = sp.posthoc_dunn(df_sub, val_col='diff_weighted', group_col='Tool', p_adjust='bonferroni')
                     dunn_results.append({
                         'Filtering Method': filtering_method,
                         'Test': 'Dunn\'s test (Tools)',
                         'results': dunn_result
                     })
-                    print(f"Dunn's test for {filtering_method}: \n{dunn_result}")
+                    print(f"  Dunn's test for {filtering_method}: \n{dunn_result}")
 
 
         output_dir = os.path.join(matrix_dir, data)
@@ -881,28 +1033,37 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
                             'Key': file_key,
                             'Filtering': filter_method,
                             # Unweighted data
+                            'Non_Informative (Unweighted)': len(filter_data_nan),
                             'Non_Informative_% (Unweighted)': len(filter_data_nan) / len(tool_data),
+                            'CJ_Reads_<9 (Unweighted)': len(filter_data_min),
+                            'CJ_Reads_<9_% (Unweighted)': len(filter_data_min) / len(tool_data),
+                            'CJ_Reads_≥9 (Unweighted)': len(filter_data_max),
                             'CJ_Reads_≥9_% (Unweighted)': len(filter_data_max) / len(tool_data),
-                            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
-                            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
                             'ACJ_Median_<9 (Unweighted)': filter_data_min['reldiff_CJ'].median() if len(filter_data_min)>0 else np.nan,
                             'ACJ_Mean_<9 (Unweighted)': filter_data_min['reldiff_CJ'].mean() if len(filter_data_min)>0 else np.nan,
-                            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
-                            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
+                            'ACJ_Median_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].median() if len(filter_data_max)>0 else np.nan,
+                            'ACJ_Mean_≥9 (Unweighted)': filter_data_max['reldiff_CJ'].mean() if len(filter_data_max)>0 else np.nan,
                             'p<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha,
                             'pFDR<CJ_alpha_<9_% (Unweighted)': p_raw_lt_alpha_fdr,
+                            'p<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha,
+                            'pFDR<CJ_alpha_≥9_% (Unweighted)': p_raw_ge_alpha_fdr,
+                            
 
                             # Weighted data
+                            'Non_Informative (Weighted)': len(filter_data_nan_weighted),
                             'Non_Informative_% (Weighted)': len(filter_data_nan_weighted) / len(tool_data),
+                            'CJ_Reads_<9 (Weighted)': len(filter_data_min_weighted),
+                            'CJ_Reads_<9_% (Weighted)': len(filter_data_min_weighted) / len(tool_data),
+                            'CJ_Reads_≥9 (Weighted)': len(filter_data_max_weighted),
                             'CJ_Reads_≥9_% (Weighted)': len(filter_data_max_weighted) / len(tool_data),
-                            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
-                            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
                             'ACJ_Median_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].median() if len(filter_data_min_weighted)>0 else np.nan,
                             'ACJ_Mean_<9 (Weighted)': filter_data_min_weighted['reldiff_weighted'].mean() if len(filter_data_min_weighted)>0 else np.nan,
-                            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
-                            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
+                            'ACJ_Median_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].median() if len(filter_data_max_weighted)>0 else np.nan,
+                            'ACJ_Mean_≥9 (Weighted)': filter_data_max_weighted['reldiff_weighted'].mean() if len(filter_data_max_weighted)>0 else np.nan,
                             'p<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha,
                             'pFDR<CJ_alpha_<9_% (Weighted)': p_w_lt_alpha_fdr,
+                            'p<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha,
+                            'pFDR<CJ_alpha_≥9_% (Weighted)': p_w_ge_alpha_fdr,
                         })
 
                         if combination != "rosette" and (file_key, filter_method) in rosette_diff_cj:
@@ -945,7 +1106,7 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
     filters = list(palette.keys())
     for m_index, m in enumerate(combining_method):
         for f_index, f in enumerate(filters):
-            x_pos = m_index + (f_index - len(filters) / 2) * 0.2
+            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 + 0.1
             df_sub = data_df[(data_df['Combination'] == m) & (data_df['Filtering'] == f)]
 
             if not df_sub.empty:
@@ -975,7 +1136,7 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
     filters = list(palette.keys())
     for m_index, m in enumerate(combining_method):
         for f_index, f in enumerate(filters):
-            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 
+            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 + 0.1 
             df_sub = data_df[(data_df['Combination'] == m) & (data_df['Filtering'] == f)]
 
             if not df_sub.empty:
@@ -1007,7 +1168,7 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
     filters = list(palette.keys())
     for m_index, m in enumerate(combining_method):   
         for f_index, f in enumerate(filters):
-            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 - 1
+            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 - 1 + 0.1
             df_sub = df_all[(df_all['Combination'] == m) & (df_all['Filtering'] == f)]
             if not df_sub.empty:
                 median = np.median(df_sub["ΔCJ Difference"].values)
@@ -1037,7 +1198,7 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
     filters = list(palette.keys())
     for m_index, m in enumerate(combining_method):   
         for f_index, f in enumerate(filters):
-            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 - 1
+            x_pos = m_index + (f_index - len(filters) / 2) * 0.2 - 1 + 0.1
             df_sub = df_all[(df_all['Combination'] == m) & (df_all['Filtering'] == f)]
             if not df_sub.empty:
                 median = np.median(df_sub["ΔCJ Difference Weighted"].values)
@@ -1058,6 +1219,7 @@ def diff_cj_combinations(circle, method, ros_combinations_mapping, filtering_met
     print("Second Table (Difference Between Rosette and Other Combinations):")
     display_cols = ['Key', 'Filtering', 'Combination', 'ΔCJ Difference', 'ΔCJ Difference Weighted']
     print(differences_df[display_cols].sort_values(by=["Key", "Filtering", "Combination"]))
+ 
 
 def plot_diffCJ_scatterplot(list_dfs):
     """
@@ -1170,10 +1332,10 @@ def compute_ratios(df, method_name):
         for filtering in df['Filtering'].unique():
             subset = df[(df['Key'] == key) & (df['Filtering'] == filtering)]
             try:
-                n_union = subset.loc[subset['Combination'] == 'union', 'CJ ≥ threshold (n)'].values[0]
-                n_rosette = subset.loc[subset['Combination'] == 'rosette', 'CJ ≥ threshold (n)'].values[0]
-                n_intersect = subset.loc[subset['Combination'] == 'intersect', 'CJ ≥ threshold (n)'].values[0]
-                n_double = subset.loc[subset['Combination'] == 'double', 'CJ ≥ threshold (n)'].values[0]
+                n_union = subset.loc[subset['Combination'] == 'union', 'CJ_Reads_≥9 (Weighted)'].values[0]
+                n_rosette = subset.loc[subset['Combination'] == 'rosette', 'CJ_Reads_≥9 (Weighted)'].values[0]
+                n_intersect = subset.loc[subset['Combination'] == 'intersect', 'CJ_Reads_≥9 (Weighted)'].values[0]
+                n_double = subset.loc[subset['Combination'] == 'double', 'CJ_Reads_≥9 (Weighted)'].values[0]
 
                 ratio_union_rosette = n_union / n_rosette if n_rosette else float('nan')
                 ratio_union_intersect = n_union / n_intersect if n_intersect else float('nan')
@@ -1213,8 +1375,8 @@ def process_and_plot_ratios(paths):
     # Define color palette
     palette = {
         'unfilter': '#d46014',
-        'filter_split': '#ddcd3d',
-        'filter_duplicates': '#064b76ff',
+        'filter-split': '#ddcd3d',
+        'filter-duplicates': '#064b76ff',
         'filter': '#63bdf6ff'
     }
 
@@ -1254,109 +1416,3 @@ def process_and_plot_ratios(paths):
         df_cut.to_csv(csv_path, index=False)
 
     return df_combined
-
-
-def compute_ratios(df, method_name):
-    """
-    Compute various ratios based on combination methods for a given dataset.
-
-    Parameters:
-        df (pd.DataFrame): Input DataFrame with combinations and counts
-        method_name (str): Name of the method (used for labeling)
-
-    Returns:
-        pd.DataFrame: DataFrame with computed ratios and method label
-    """
-    df['Ratio_Union_Rosette'] = float('nan')
-    df['Ratio_Union_Intersect'] = float('nan')
-    df['Ratio_Rosette_Double'] = float('nan')
-
-    for key in df['Key'].unique():
-        for filtering in df['Filtering'].unique():
-            subset = df[(df['Key'] == key) & (df['Filtering'] == filtering)]
-            try:
-                n_union = subset.loc[subset['Combination'] == 'union', 'CJ ≥ threshold (n)'].values[0]
-                n_rosette = subset.loc[subset['Combination'] == 'rosette', 'CJ ≥ threshold (n)'].values[0]
-                n_intersect = subset.loc[subset['Combination'] == 'intersect', 'CJ ≥ threshold (n)'].values[0]
-                n_double = subset.loc[subset['Combination'] == 'double', 'CJ ≥ threshold (n)'].values[0]
-
-                ratio_union_rosette = n_union / n_rosette if n_rosette else float('nan')
-                ratio_union_intersect = n_union / n_intersect if n_intersect else float('nan')
-                ratio_rosette_double = n_rosette / n_double if n_double else float('nan')
-
-                mask = (df['Key'] == key) & (df['Filtering'] == filtering)
-                df.loc[mask, 'Ratio_Union_Rosette'] = ratio_union_rosette
-                df.loc[mask, 'Ratio_Union_Intersect'] = ratio_union_intersect
-                df.loc[mask, 'Ratio_Rosette_Double'] = ratio_rosette_double
-
-            except IndexError:
-                print(f"⚠️ Missing combination for Key={key}, Filtering={filtering} in {method_name}")
-
-    df_cut = df.drop_duplicates(subset=['Key', 'Filtering'])[
-        ['Key', 'Filtering', 'Ratio_Union_Rosette', 'Ratio_Union_Intersect', 'Ratio_Rosette_Double']
-    ].copy()
-
-    df_cut['Method'] = method_name
-    df_cut['Ratio_Rosette_Intersect'] = df_cut['Ratio_Union_Intersect'] / df_cut['Ratio_Union_Rosette']
-
-    return df_cut
-
-
-def process_and_plot_ratios(paths):
-    """
-    Process ratio metrics from multiple methods and create violin plots.
-    Saves individual plots and combined_ratios.csv in each method's folder.
-
-    Parameters:
-        paths (list of tuples): List of (csv_path, method_name) pairs
-
-    Returns:
-        pd.DataFrame: Combined DataFrame with ratio metrics for all methods
-    """
-    df_combined = pd.DataFrame()
-
-    # Define color palette
-    palette = {
-        'unfilter': '#d46014',
-        'filter_split': '#ddcd3d',
-        'filter_duplicates': '#064b76ff',
-        'filter': '#63bdf6ff'
-    }
-
-    for path, method in paths:
-        df = pd.read_csv(path)
-        if 'Key' in df.columns:
-            df['n_tools'] = df['Key'].apply(lambda x: len(str(x).split('_')))
-        df_cut = compute_ratios(df, method)
-        df_combined = pd.concat([df_combined, df_cut], ignore_index=True)
-
-        # Create plot
-        plt.figure(figsize=(7, 4))
-        ax = plt.gca()
-        sns.violinplot(data=df_cut, x='Filtering', y='Ratio_Rosette_Intersect', palette=palette, ax=ax)
-        ax.set_ylabel("Rosette / Intersect", fontsize=16)
-        ax.set_xlabel('', fontsize=16)
-        ax.set_xticklabels(["unfilter", "filter-split", "filter-duplicates", "filter"], fontsize=16)
-        ax.tick_params(axis='y', labelsize=16)
-        ax.set_title('', fontsize=16)
-        ax.set_ylim(bottom=0)
-
-        sns.despine()
-        plt.tight_layout()
-
-        # Save to same directory as input CSV
-        method_dir = os.path.dirname(path)
-        os.makedirs(method_dir, exist_ok=True)
-
-        plot_path = os.path.join(method_dir, f"{method}_rosette_intersect_violinplot.png")
-        csv_path = os.path.join(method_dir, "combined_ratios.csv")
-
-        plt.savefig(plot_path, dpi=300)
-        plt.show()
-        plt.close()
-
-        # Save CSV for the individual method
-        df_cut.to_csv(csv_path, index=False)
-
-    return df_combined
-
