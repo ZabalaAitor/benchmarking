@@ -509,17 +509,41 @@ def plot_mappability_and_mapq(matrix_file, read_file, output_dir):
     def gather_data(condition, base_df, category):
         mapp_data = []
         mapq_data = []
+        mapp_min_data = []
+        mapp_max_data = []
+        mapq_min_data = []
+        mapq_max_data = []
+
         for tool in tools:
             subset = matrix.query(condition(tool))
             merged = subset.merge(base_df, on='Circle', how='inner')
+
             for _, entry in merged.iterrows():
-                # Mappability
+
+                # --- ORIGINAL VALUES (KEEP) ---
                 mapp_data.append({'Tool': tool, 'Value': entry['Mappability_L'], 'Category': category})
                 mapp_data.append({'Tool': tool, 'Value': entry['Mappability_R'], 'Category': category})
-                # MAPQ
+
                 mapq_data.append({'Tool': tool, 'Value': entry['MAPQ_mean_CJ1'], 'Category': category})
                 mapq_data.append({'Tool': tool, 'Value': entry['MAPQ_mean_CJ2'], 'Category': category})
-        return mapp_data, mapq_data
+
+                # === NEW VALUES: MIN & MAX ===
+                mapp_L = entry['Mappability_L']
+                mapp_R = entry['Mappability_R']
+                mapq_L = entry['MAPQ_mean_CJ1']
+                mapq_R = entry['MAPQ_mean_CJ2']
+
+                mapp_min_data.append({'Tool': tool, 'Value': min(mapp_L, mapp_R), 'Category': category})
+                mapp_max_data.append({'Tool': tool, 'Value': max(mapp_L, mapp_R), 'Category': category})
+
+                mapq_min_data.append({'Tool': tool, 'Value': min(mapq_L, mapq_R), 'Category': category})
+                mapq_max_data.append({'Tool': tool, 'Value': max(mapq_L, mapq_R), 'Category': category})
+
+        return (
+            mapp_data, mapq_data,
+            mapp_min_data, mapp_max_data,
+            mapq_min_data, mapq_max_data
+        )
 
     # === Define conditions ===
     tp_condition = lambda tool: f"(Simulated == 1 and `{tool}` == 1)"
@@ -527,51 +551,101 @@ def plot_mappability_and_mapq(matrix_file, read_file, output_dir):
     fp_condition = lambda tool: f"(Simulated == 0 and `{tool}` == 1)"
 
     # === Collect data ===
-    tp_mapp, tp_mapq = gather_data(tp_condition, true_df, 'True Positive')
-    fn_mapp, fn_mapq = gather_data(fn_condition, true_df, 'False Negative')
-    fp_mapp, fp_mapq = gather_data(fp_condition, true_df, 'False Positive')
+    (
+        tp_mapp, tp_mapq,
+        tp_mapp_min, tp_mapp_max,
+        tp_mapq_min, tp_mapq_max
+    ) = gather_data(tp_condition, true_df, 'True Positive')
 
-    # === Combine ===
+    (
+        fn_mapp, fn_mapq,
+        fn_mapp_min, fn_mapp_max,
+        fn_mapq_min, fn_mapq_max
+    ) = gather_data(fn_condition, true_df, 'False Negative')
+
+    (
+        fp_mapp, fp_mapq,
+        fp_mapp_min, fp_mapp_max,
+        fp_mapq_min, fp_mapq_max
+    ) = gather_data(fp_condition, true_df, 'False Positive')
+
+    # === Combine ORIGINAL ===
     all_mapp = pd.DataFrame(tp_mapp + fn_mapp + fp_mapp)
     all_mapq = pd.DataFrame(tp_mapq + fn_mapq + fp_mapq)
 
+    # === Combine NEW (MIN/MAX) ===
+    all_mapp_min = pd.DataFrame(tp_mapp_min + fn_mapp_min + fp_mapp_min)
+    all_mapp_max = pd.DataFrame(tp_mapp_max + fn_mapp_max + fp_mapp_max)
+
+    all_mapq_min = pd.DataFrame(tp_mapq_min + fn_mapq_min + fp_mapq_min)
+    all_mapq_max = pd.DataFrame(tp_mapq_max + fn_mapq_max + fp_mapq_max)
+
     # === Plotting ===
     def normalize_tool_name(tool):
-        """
-        Standardize tool names for plotting, especially ecc_finder variants.
-        """
-        # Handle ecc_finder variants
         if 'ecc_finder' in tool:
             return tool.replace('-', '\n')
         return tool
 
     def plot_violin(data, y_label, title_prefix):
-        # Normalize tool names
         data = data.copy()
         data['Tool'] = data['Tool'].apply(normalize_tool_name)
 
+        # Get all tools present in the full dataset
+        all_tools = list(pd.unique(data['Tool']))
+
         for category in ['True Positive', 'False Negative', 'False Positive']:
-            print("Plotting category:", category)
             subset = data[data['Category'] == category]
-            if subset.empty:
-                continue
 
             plt.figure(figsize=(10, 4))
-            sns.violinplot(
-                data=subset, x='Tool', y='Value',
-                inner='quartile', palette=colorblind_palette, cut=0
+            ax = sns.violinplot(
+                data=subset,
+                x='Tool',
+                y='Value',
+                order=all_tools,                     
+                inner='box',
+                palette=colorblind_palette,
+                cut=0
             )
+
+            # Remove top and right spines
+            sns.despine(top=True, right=True)
+
+            # Count values per tool (missing tools get 0)
+            tool_counts = subset['Tool'].value_counts().to_dict()
+
+            # Determine y-range for label placement
+            ymax = subset['Value'].max() if not subset.empty else 1
+
+            # Add counts (including 0) above each violin
+            for i, tool in enumerate(all_tools):
+                count = tool_counts.get(tool, 0)
+                ax.text(
+                    i, ymax + (0.05 * ymax),
+                    str(count),
+                    ha='center', va='bottom',
+                    fontsize=14
+                )
+
             plt.ylabel(y_label, fontsize=16)
             plt.xlabel("")
             plt.xticks(fontsize=16)
             plt.yticks(fontsize=16)
             plt.tight_layout()
-            plt.savefig(f"{output_dir}/{title_prefix}_{category.replace(' ', '_')}.png", dpi=300, bbox_inches="tight")
+            ax.set_axisbelow(True)
+            plt.grid(axis="y", linestyle='--', linewidth=0.5, alpha=0.7)
+            plt.savefig(f"{output_dir}/{title_prefix}_{category.replace(' ', '_')}.png", dpi=300)
             plt.show()
 
-    # === Generate plots ===
-    plot_violin(all_mapp, "Mappability", "Distribution of Mappability per Tool")
-    plot_violin(all_mapq, "MAPQ Mean", "Distribution of MAPQ Mean per Tool")
+
+    # === ORIGINAL PLOTS ===
+    plot_violin(all_mapp, "Mappability", "Distribution_of_Mappability_per_Tool")
+    plot_violin(all_mapq, "MAPQ Mean", "Distribution_of_MAPQ_Mean_per_Tool")
+
+    plot_violin(all_mapp_min, "Min Mappability", "Distribution_of_Mappability_Min_per_Tool")
+    plot_violin(all_mapp_max, "Max Mappability", "Distribution_of_Mappability_Max_per_Tool")
+
+    plot_violin(all_mapq_min, "Min MAPQ Mean", "Distribution_of_MAPQ_Min_per_Tool")
+    plot_violin(all_mapq_max, "Max MAPQ Mean", "Distribution_of_MAPQ_Max_per_Tool")
 
 palette = {
     'unfilter': '#d46014',
@@ -1380,6 +1454,8 @@ def process_and_plot_ratios(paths):
         'filter': '#63bdf6ff'
     }
 
+    violin_order = ["unfilter", "filter-split", "filter-duplicates", "filter"]
+
     for path, method in paths:
         df = pd.read_csv(path)
         if 'Key' in df.columns:
@@ -1390,10 +1466,25 @@ def process_and_plot_ratios(paths):
         # Create plot
         plt.figure(figsize=(7, 4))
         ax = plt.gca()
-        sns.violinplot(data=df_cut, x='Filtering', y='Ratio_Rosette_Intersect', palette=palette, ax=ax)
+
+        sns.violinplot(
+            data=df_cut, 
+            x='Filtering', 
+            y='Ratio_Rosette_Intersect', 
+            palette=palette, 
+            order=violin_order,
+            ax=ax,
+            inner='box',
+            cut=0
+        )
+
+        # Put grid behind the violins
+        ax.set_axisbelow(True)
+        plt.grid(axis="y", linestyle='--', linewidth=0.5, alpha=0.7)
+
         ax.set_ylabel("Rosette / Intersect", fontsize=16)
         ax.set_xlabel('', fontsize=16)
-        ax.set_xticklabels(["unfilter", "filter-split", "filter-duplicates", "filter"], fontsize=16)
+        ax.set_xticklabels(violin_order, fontsize=16)
         ax.tick_params(axis='y', labelsize=16)
         ax.set_title('', fontsize=16)
         ax.set_ylim(bottom=0)
