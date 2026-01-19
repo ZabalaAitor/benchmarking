@@ -18,19 +18,21 @@ cd benchmarking
 
 ### 2. Download input data from Zenodo:
 
-🔗 https://zenodo.org/record/15783793
+🔗 [https://zenodo.org/records/15783792](https://zenodo.org/record/15783792)
 
 After downloading, extract the contents and organize them as follows:
 
 - data/ → should contain all BED files with raw and filtered outputs from circRNA and eccDNA detection tools.
 
-- repeatmasker/ → must contain the txt file required for repeat element annotation analysis.
-
 - genomic_elements/ → must contain the GTF files and other genome annotation data required for genomic annotation analysis.
 
-These three folders (data/, repeatmasker/ and genomic_elements/) are essential for running the pipeline.
+- mappability/ → should contain mappability values from UCSC 50-mer multi-track bigWig files [(https://hgdownload.soe.ucsc.edu/gbdb/hs1/hoffmanMappability/)](https://hgdownload.soe.ucsc.edu/gbdb/hs1/hoffmanMappability/)
+
+- repeatmasker/ → must contain the txt file required for repeat element annotation analysis.
+
+These four folders (data/, genomic_elements/, mappability/ and repeatmasker/) are essential for running the pipeline.
 
 ## 📊 Outputs
 
 The ouputs of the benchmarking analysis are available at:  
-🔗 [https://zenodo.org/records/15783795](https://zenodo.org/records/15783795)
+🔗 [https://zenodo.org/records/15783794](https://zenodo.org/records/15783794)
