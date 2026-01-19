@@ -36,3 +36,8 @@ These four folders (data/, genomic_elements/, mappability/ and repeatmasker/) ar
 
 The ouputs of the benchmarking analysis are available at:  
 🔗 [https://zenodo.org/records/15783794](https://zenodo.org/records/15783794)
+
+## Cite
+
+Zabala, A., Ascensión, A. M., Prada-Luengo, I., & Otaegui, D. (2025). Comparative analysis of eccDNA and circRNA tools shows increased accuracy of tool combination. bioRxiv, 2025-07.
+
